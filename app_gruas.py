@@ -4,7 +4,7 @@ import urllib.parse
 # 1. Configuración de la página
 st.set_page_config(page_title="OKGRUAS RS", page_icon="🚛", layout="centered")
 
-# 2. Estilo Visual (Rosa y Oscuro)
+# 2. Estilo Visual Personalizado
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: white; }
@@ -15,9 +15,10 @@ st.markdown("""
         width: 100%;
         font-weight: bold;
     }
-    .stTextInput>div>div>input, .stNumberInput>div>div>input { background-color: #262626; color: white; border: 1px solid #FF69B4; }
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stNumberInput>div>div>input { 
+        background-color: #262626 !important; color: white !important; border: 1px solid #FF69B4 !important; 
+    }
     label { color: #FF69B4 !important; font-weight: bold; }
-    .stSuccess { background-color: #1e1e1e; color: #25D366; border: 1px solid #25D366; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -31,7 +32,7 @@ except:
 menu = st.sidebar.radio("Menú", ["📱 Cotizador", "📊 Admin"])
 
 if menu == "📱 Cotizador":
-    st.title("Cotizador y Calculadora")
+    st.title("Solicitud de Servicio")
     
     with st.form("cotizador"):
         col1, col2 = st.columns(2)
@@ -42,44 +43,55 @@ if menu == "📱 Cotizador":
             origen = st.text_input("¿Dónde está el auto?")
             destino = st.text_input("¿A dónde va?")
         
-        detalle_falla = st.text_area("Detalle del coche (¿Qué le pasó? ¿Está bloqueado?)")
+        # Opciones de falla (Las que te gustaron)
+        tipo_falla = st.selectbox("¿Qué problema tiene el auto?", [
+            "Falla Mecánica", 
+            "Choque / Siniestro", 
+            "Llanta Ponchada", 
+            "Sin Batería", 
+            "Auto Bloqueado",
+            "Otro (Especificar en notas)"
+        ])
+        
+        notas = st.text_area("Notas adicionales o detalles")
         
         st.write("---")
         st.write("### 💰 Calculadora de Costo Estimado")
-        distancia = st.number_input("Kilómetros aproximados (solo números)", min_value=0, value=0)
+        st.caption("Introduce los KM (Sujeto a verificación por el operador)")
+        distancia = st.number_input("Kilómetros según Maps", min_value=0, value=0)
         
-        # Lógica de precios (Puedes ajustar estos valores)
-        banderazo = 600
-        costo_km = 30
-        total_estimado = banderazo + (distancia * costo_km) if distancia > 0 else 0
+        # Lógica de precios (Banderazo MTY)
+        banderazo = 800
+        costo_km = 25
+        total = banderazo + (distancia * costo_km) if distancia > 0 else banderazo
         
-        if total_estimado > 0:
-            st.info(f"Costo aproximado: ${total_estimado} MXN")
+        st.info(f"Costo base (Banderazo): ${banderazo} MXN")
+        if distancia > 0:
+            st.success(f"Total Estimado: ${total} MXN")
         
-        btn_enviar = st.form_submit_button("📩 ENVIAR SOLICITUD POR WHATSAPP")
+        btn_enviar = st.form_submit_button("📩 SOLICITAR GRÚA POR WHATSAPP")
 
     if btn_enviar:
         if nombre and modelo and destino:
-            # Construcción del mensaje
             texto = (
-                f"Hola, soy {nombre}. Solicito servicio para un {modelo}.\n"
-                f"📍 Recoger en: {origen}\n"
-                f"🏁 Entrega en: {destino}\n"
-                f"🛠️ Detalle: {detalle_falla}\n"
-                f"🛣️ Distancia: {distancia} km\n"
-                f"💰 Estimado: ${total_estimado} MXN"
+                f"*SOLICITUD DE GRÚA - OKGRUAS RS*\n\n"
+                f"👤 *Cliente:* {nombre}\n"
+                f"🚗 *Vehículo:* {modelo}\n"
+                f"🛠️ *Problema:* {tipo_falla}\n"
+                f"📍 *Origen:* {origen}\n"
+                f"🏁 *Destino:* {destino}\n"
+                f"🛣️ *Distancia declarada:* {distancia} km\n"
+                f"💰 *Precio estimado:* ${total} MXN\n\n"
+                f"📝 *Notas:* {notas}"
             )
             mensaje_url = urllib.parse.quote(texto)
-            
-            # --- PON TU NÚMERO AQUÍ ---
-            mi_numero = "528143029578" 
+            mi_numero = "528143029578" # <--- Tu número
             whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
             
-            st.success("¡Cotización lista! Haz clic abajo para enviarla.")
             st.markdown(f'''
                 <a href="{whatsapp_link}" target="_blank">
                     <button style="background-color: #25D366; color: white; padding: 15px; border: none; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold;">
-                        ✅ CONFIRMAR Y ENVIAR WHATSAPP
+                        ✅ CONFIRMAR Y ENVIAR A WHATSAPP
                     </button>
                 </a>
             ''', unsafe_allow_html=True)
@@ -87,8 +99,9 @@ if menu == "📱 Cotizador":
             st.error("Por favor llena Nombre, Modelo y Destino.")
 
 elif menu == "📊 Admin":
-    st.title("Panel Interno")
+    st.title("Panel de Control")
     password = st.text_input("Contraseña", type="password")
     if password == "RS2026":
-        st.success("Acceso Total")
-        st.write("Aquí podrás ver reportes en el futuro.")
+        st.success("Acceso autorizado")
+        st.write("### Dashboard de OKGRUAS RS")
+        st.write("Bienvenida, Yajaira. Aquí podrás gestionar tus servicios pronto.")
