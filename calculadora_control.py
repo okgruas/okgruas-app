@@ -97,7 +97,7 @@ with b_new:
 with b_ws:
     fecha_hoy = datetime.now().strftime("%d/%m/%Y %H:%M")
     texto_ws = f"*REPORTE OKGRUAS RS*\n📅 {fecha_hoy}\n👤 Socio: {socio}\n🚛 Unidad: {eco}\n📍 KM: {km}\n💵 Total: ${total_iva:,.2f}\n💎 Comisión Yajaira: ${utilidad_yaja:,.2f}"
-    link = f"https://wa.me/528132454641?text={urllib.parse.quote(texto_ws)}"
+    link = f"https://wa.me/528143029578?text={urllib.parse.quote(texto_ws)}"
     st.markdown(f'<a href="{link}" target="_blank"><button style="width:100%; border-radius:10px; height:3.5em; background-color:#25d366; color:white; border:none; font-weight:bold; cursor:pointer;">📲 ENVIAR REPORTE</button></a>', unsafe_allow_html=True)
 
 with b_logout:
