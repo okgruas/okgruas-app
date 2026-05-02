@@ -1,108 +1,78 @@
 import streamlit as st
 import urllib.parse
+from datetime import datetime
 
-# 1. Configuración de la página
-st.set_page_config(page_title="OKGRUAS RS", page_icon="🚛", layout="centered")
+# 1. Configuración
+st.set_page_config(page_title="OKGRUAS RS - PRIVADO", page_icon="🔐", layout="centered")
 
-# 2. Estilo Visual
+# 2. Estilo
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: white; }
-    .stButton>button { 
-        background-color: #FF69B4; 
-        color: white; 
-        border-radius: 10px; 
-        width: 100%;
-        font-weight: bold;
-    }
-    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stNumberInput>div>div>input { 
-        background-color: #262626 !important; color: white !important; border: 1px solid #FF69B4 !important; 
-    }
+    .stButton>button { background-color: #FF69B4; color: white; border-radius: 10px; width: 100%; font-weight: bold; }
     label { color: #FF69B4 !important; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Logo
-try:
-    st.image("logo.png", width=250)
-except:
-    st.markdown("<h1 style='color: #FF69B4;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+# --- LOGIN DE SEGURIDAD ---
+if 'autenticado' not in st.session_state:
+    st.session_state['autenticado'] = False
 
-# 4. Menú Lateral
+if not st.session_state['autenticado']:
+    st.image("logo.png", width=200)
+    st.title("🔒 Acceso Restringido")
+    clave = st.text_input("Introduce la clave de acceso", type="password")
+    if st.button("Entrar"):
+        if clave == "RS2026": # <--- TU CLAVE MAESTRA
+            st.session_state['autenticado'] = True
+            st.rerun()
+        else:
+            st.error("Clave incorrecta")
+    st.stop() # Detiene todo lo de abajo si no hay clave
+
+# --- SI ESTÁ AUTENTICADO, MUESTRA EL RESTO ---
+
 menu = st.sidebar.radio("Menú", ["📱 Cotizador", "📊 Admin"])
 
 if menu == "📱 Cotizador":
-    st.title("Solicitud de Servicio")
+    st.title("Calculadora Oficial OKGRUAS RS")
     
     with st.form("cotizador"):
-        col1, col2 = st.columns(2)
-        with col1:
-            nombre = st.text_input("Tu Nombre")
-            modelo = st.text_input("Modelo del Auto")
-        with col2:
-            origen = st.text_input("¿Dónde está el auto?")
-            destino = st.text_input("¿A dónde va?")
+        nombre_cliente = st.text_input("Nombre del Cliente")
+        modelo = st.text_input("Modelo del Auto")
+        tipo_falla = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Bloqueado"])
+        distancia = st.number_input("Kilómetros totales", min_value=0, value=0)
         
-        tipo_falla = st.selectbox("¿Qué problema tiene el auto?", [
-            "Falla Mecánica", 
-            "Choque / Siniestro", 
-            "Llanta Ponchada", 
-            "Sin Batería", 
-            "Auto Bloqueado",
-            "Otro (Especificar en notas)"
-        ])
-        
-        notas = st.text_area("Notas adicionales o detalles")
-        
-        st.write("---")
-        st.write("### 💰 Calculadora de Costo Estimado")
-        st.caption("Introduce los KM (Sujeto a verificación por el operador)")
-        distancia = st.number_input("Kilómetros según Maps", min_value=0, value=0)
-        
-        # Lógica de precios
-        banderazo = 800
-        costo_km = 25
-        total = banderazo + (distancia * costo_km) if distancia > 0 else banderazo
-        
-        # --- AQUÍ ESTÁ EL CAMBIO ---
-        st.info(f"Costo base (Banderazo): ${banderazo} MXN")
-        st.write(f"➕ Costo por kilómetro: **${costo_km} MXN**") # <-- Esta es la línea nueva
-        
-        if distancia > 0:
-            st.success(f"Total Estimado: **${total} MXN**")
-        
-        btn_enviar = st.form_submit_button("📩 SOLICITAR GRÚA POR WHATSAPP")
+        btn_enviar = st.form_submit_button("📩 GENERAR COTIZACIÓN")
 
     if btn_enviar:
-        if nombre and modelo and destino:
-            texto = (
-                f"*SOLICITUD DE GRÚA - OKGRUAS RS*\n\n"
-                f"👤 *Cliente:* {nombre}\n"
-                f"🚗 *Vehículo:* {modelo}\n"
-                f"🛠️ *Problema:* {tipo_falla}\n"
-                f"📍 *Origen:* {origen}\n"
-                f"🏁 *Destino:* {destino}\n"
-                f"🛣️ *Distancia:* {distancia} km\n"
-                f"💰 *Precio estimado:* ${total} MXN\n\n"
-                f"📝 *Notas:* {notas}"
-            )
-            mensaje_url = urllib.parse.quote(texto)
-            mi_numero = "528143029578" 
-            whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
-            
-            st.markdown(f'''
-                <a href="{whatsapp_link}" target="_blank">
-                    <button style="background-color: #25D366; color: white; padding: 15px; border: none; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold;">
-                        ✅ CONFIRMAR Y ENVIAR A WHATSAPP
-                    </button>
-                </a>
-            ''', unsafe_allow_html=True)
-        else:
-            st.error("Por favor llena Nombre, Modelo y Destino.")
+        banderazo = 800
+        costo_km = 25
+        total = banderazo + (distancia * costo_km)
+        
+        # Aquí es donde tú llevas el control:
+        # El mensaje que te llegue dirá la hora exacta de la consulta
+        ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        texto = (
+            f"*OKGRUAS RS - REGISTRO DE SERVICIO*\n"
+            f"📅 *Fecha:* {ahora}\n"
+            f"👤 *Cliente:* {nombre_cliente}\n"
+            f"🛣️ *Distancia:* {distancia} km\n"
+            f"💰 *Total:* ${total} MXN\n"
+            f"--------------------------"
+        )
+        
+        mensaje_url = urllib.parse.quote(texto)
+        mi_numero = "528143029578"
+        whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
+        
+        st.success(f"Cotización de ${total} generada correctamente.")
+        st.markdown(f'<a href="{whatsapp_link}" target="_blank"><button>✅ ENVIAR REPORTE A MATRIZ</button></a>', unsafe_allow_html=True)
 
 elif menu == "📊 Admin":
-    st.title("Panel de Control")
-    password = st.text_input("Contraseña", type="password")
-    if password == "RS2026":
-        st.success("Acceso autorizado")
-        st.write("Bienvenida, Yajaira.")
+    st.title("Control de Mandos")
+    st.write("Bienvenida, Yajaira. Aquí puedes ver que el sistema está protegido.")
+    if st.button("Cerrar Sesión"):
+        st.session_state['autenticado'] = False
+        st.rerun()
