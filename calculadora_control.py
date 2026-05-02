@@ -1,106 +1,76 @@
 import streamlit as st
-from PIL import Image
-import os
 import urllib.parse
 from datetime import datetime
 
-# 1. CONFIGURACIÓN DE LA APP
-st.set_page_config(page_title="OKGRUAS RS Admin", page_icon="🚛", layout="wide")
+# 1. CONFIGURACIÓN PROFESIONAL
+st.set_page_config(page_title="OKGRUAS RS Control", page_icon="🚛", layout="wide")
 
-# --- BLOQUE DE SEGURIDAD (EL CANDADO) ---
-if 'autenticado' not in st.session_state:
-    st.session_state['autenticado'] = False
+# Candado de seguridad
+if 'auth' not in st.session_state:
+    st.session_state['auth'] = False
 
-if not st.session_state['autenticado']:
-    st.markdown("<h1 style='color: #FF69B4; text-align: center;'>🔐 Acceso Administrativo</h1>", unsafe_allow_html=True)
-    col_log1, col_log2, col_log3 = st.columns([1,2,1])
-    with col_log2:
-        password = st.text_input("Introduce la Clave Maestra", type="password")
-        if st.button("Entrar al Panel"):
-            if password == "RS2026": # Tu clave
-                st.session_state['autenticado'] = True
+if not st.session_state['auth']:
+    st.markdown("<h2 style='text-align: center;'>🔐 Acceso Administrativo</h2>", unsafe_allow_html=True)
+    col_lock1, col_lock2, col_lock3 = st.columns([1,2,1])
+    with col_lock2:
+        clave = st.text_input("Introduce la clave maestra", type="password")
+        if st.button("Ingresar"):
+            if clave == "RS2026":
+                st.session_state['auth'] = True
                 st.rerun()
             else:
                 st.error("Clave incorrecta")
-    st.stop() 
+    st.stop()
 
-# --- ESTILO VISUAL ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #121212; color: white; }
-    .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; font-weight: bold; background-color: #FF69B4; color: white; }
-    label { color: #FF69B4 !important; font-weight: bold; }
-    .stMetric { background-color: #1e1e1e; padding: 15px; border-radius: 10px; border: 1px solid #FF69B4; }
-    </style>
-    """, unsafe_allow_html=True)
+# --- MENÚ LATERAL ---
+st.sidebar.header("CONFIGURACIÓN")
+modo = st.sidebar.radio("Tipo de Vista:", ["📱 Calculadora Estándar", "💎 Modo Administrador"])
 
-if 'version' not in st.session_state:
-    st.session_state.version = 0
+# Estilos
+st.markdown("<style>.stApp { background-color: #f0f2f6; } .stMetric { background-color: white; border-radius: 10px; padding: 20px; }</style>", unsafe_allow_html=True)
 
-# --- 2. ENCABEZADO CON LOGO ---
-col_l, col_t, col_s = st.columns([1, 2, 2])
+st.title("OKGRUAS RS - Panel de Control")
 
-with col_l:
-    for f in ["logo.png", "logo.pgn"]:
-        if os.path.exists(f):
-            st.image(f, width=100)
-            break
+# --- ENTRADA DE DATOS ---
+col_in, col_res = st.columns(2)
 
-with col_t:
-    st.title("💖 OKGRUAS RS")
-    st.caption("Panel de Control de Servicios | Monterrey")
+with col_in:
+    st.subheader("📍 Detalles del Servicio")
+    km = st.number_input("Kilómetros totales:", min_value=0.0, value=10.0)
+    sotano = st.checkbox("📍 ¿Es Sótano?")
+    falla = st.checkbox("🔧 ¿Falla Mecánica?")
+    pisos = st.number_input("Niveles de sótano:", min_value=0) if sotano else 0
 
-with col_s:
-    st.info("🆔 Identificación del Servicio")
-    socio = st.selectbox("Operador/Socio:", ["Juan G.", "Pedro L.", "Luis M.", "Yajaira Admin"], key=f"soc_{st.session_state.version}")
-    eco = st.text_input("Unidad (Eco):", placeholder="Ej. G-01", key=f"eco_{st.session_state.version}")
-
-# --- 3. CALCULADORA ---
-st.divider()
-c_in, c_out = st.columns(2)
-
-with c_in:
-    st.subheader("📍 Detalles del Viaje")
-    km = st.number_input("Kilómetros totales:", min_value=0.0, value=30.0, key=f"km_{st.session_state.version}")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        sotano = st.checkbox("📍 ¿Es Sótano?", key=f"sot_{st.session_state.version}")
-    with col2:
-        falla = st.checkbox("🔧 ¿Falla Mecánica?", key=f"fal_{st.session_state.version}")
-    
-    pisos = st.number_input("Niveles de sótano:", min_value=0, step=1) if sotano else 0
-
-# --- 4. LÓGICA DE COBRO (Tus fórmulas) ---
+# --- LÓGICA DE CÁLCULOS ---
 subtotal = 900.0 + (km * 25.0) + (pisos * 350.0) + (350.0 if falla else 0)
 total_iva = subtotal * 1.16
 utilidad_yaja = subtotal * 0.15
 pago_socio = subtotal - utilidad_yaja
 
-with c_out:
-    st.subheader("💰 Resumen de Cuenta")
+with col_res:
+    st.subheader("💰 Resumen para Cobro")
     st.metric("TOTAL A COBRAR (IVA)", f"${total_iva:,.2f}")
-    st.metric("SUBTOTAL", f"${subtotal:,.2f}")
-    
-    st.warning(f"💎 Tu Utilidad (15%): ${utilidad_yaja:,.2f}")
-    st.info(f"🚛 Liquidación Operador: ${pago_socio:,.2f}")
 
-# --- 5. ACCIONES ---
+# --- PROTECCIÓN DE GANANCIA (Solo tú lo ves) ---
+if modo == "💎 Modo Administrador":
+    st.divider()
+    st.subheader("📊 Rendimiento Real (Privado)")
+    c1, c2 = st.columns(2)
+    c1.metric("TU UTILIDAD (15%)", f"${utilidad_yaja:,.2f}")
+    c2.metric("PAGO A SOCIO", f"${pago_socio:,.2f}")
+else:
+    st.info("🔒 Los datos de rendimiento están ocultos.")
+
+# --- WHATSAPP (Con tu número 8143029578) ---
 st.divider()
-b_new, b_ws, b_logout = st.columns(3)
+texto_ws = f"*TICKET OKGRUAS RS*\n📍 KM: {km}\n💵 Cobro Total: ${total_iva:,.2f}"
 
-with b_new:
-    if st.button("🔄 NUEVA COTIZACIÓN"):
-        st.session_state.version += 1
-        st.rerun()
+# Si tú mandas el reporte desde el modo admin, también te llegará cuánto ganaste
+if modo == "💎 Modo Administrador":
+    texto_ws += f"\n\n*INFO PRIVADA*\nGanancia: ${utilidad_yaja:,.2f}"
 
-with b_ws:
-    fecha_hoy = datetime.now().strftime("%d/%m/%Y %H:%M")
-    texto_ws = f"*REPORTE OKGRUAS RS*\n📅 {fecha_hoy}\n👤 Socio: {socio}\n🚛 Unidad: {eco}\n📍 KM: {km}\n💵 Total: ${total_iva:,.2f}\n💎 Comisión Yajaira: ${utilidad_yaja:,.2f}"
-    link = f"https://wa.me/528143029578?text={urllib.parse.quote(texto_ws)}"
-    st.markdown(f'<a href="{link}" target="_blank"><button style="width:100%; border-radius:10px; height:3.5em; background-color:#25d366; color:white; border:none; font-weight:bold; cursor:pointer;">📲 ENVIAR REPORTE</button></a>', unsafe_allow_html=True)
+# Tu número configurado
+mi_numero = "528143029578" 
+link_ws = f"https://wa.me/{mi_numero}?text={urllib.parse.quote(texto_ws)}"
 
-with b_logout:
-    if st.button("🚪 CERRAR SESIÓN"):
-        st.session_state['autenticado'] = False
-        st.rerun()
+st.markdown(f'<a href="{link_ws}" target="_blank"><button style="width:100%; background-color:#25d366; color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer;">📲 ENVIAR REPORTE</button></a>', unsafe_allow_html=True)
