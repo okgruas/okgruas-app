@@ -66,7 +66,6 @@ if menu == "📱 Cotizador":
         total = banderazo + (distancia * costo_km) if distancia > 0 else banderazo
         
         st.info(f"Costo base (Banderazo): ${banderazo} MXN")
-        st.info(f"Costo base (km): ${km} MXN")        if distancia > 0:
             st.success(f"Total Estimado: ${total} MXN")
         
         btn_enviar = st.form_submit_button("📩 SOLICITAR GRÚA POR WHATSAPP")
