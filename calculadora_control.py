@@ -6,7 +6,7 @@ import os
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="OKGRUAS RS Control", page_icon="🚛", layout="wide")
 
-# Estilos CSS (Colores Verdes, Modo Oscuro y Tipografía)
+# Estilos CSS (Verde Neón, Modo Oscuro y Tipografía)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
@@ -27,7 +27,6 @@ st.markdown("""
         background-color: #1a1a1a;
         border-radius: 10px;
     }
-    /* Estilo para los cuadros de opciones */
     .option-box {
         background-color: #1e1e1e;
         padding: 10px;
@@ -38,7 +37,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. CANDADO INICIAL (Clave Maestra)
+# 2. CANDADO INICIAL (Clave Maestra RS2026)
 if 'auth' not in st.session_state:
     st.session_state['auth'] = False
 
@@ -55,15 +54,19 @@ if not st.session_state['auth']:
                 st.error("Clave incorrecta")
     st.stop()
 
-# 3. CABECERA CON LOGO
-col_logo1, col_logo2, col_logo3 = st.columns([1,2,1])
-with col_logo2:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", use_container_width=True)
-    else:
-        st.markdown("<h1 style='text-align: center; color: #00FF00;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+# 3. CABECERA CON LOGO PEQUEÑO A LA IZQUIERDA
+col_header1, col_header2 = st.columns([1, 4]) # 1 parte para el logo, 4 para el título
 
-st.markdown("<h4 style='text-align: center; color: #888;'>Panel de Control Ejecutivo</h4>", unsafe_allow_html=True)
+with col_header1:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=120) # Tamaño pequeño controlado
+    else:
+        st.markdown("<h2 style='color: #00FF00;'>RS</h2>", unsafe_allow_html=True)
+
+with col_header2:
+    st.markdown("<h1 style='color: #00FF00; margin-bottom: 0;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; margin-top: 0;'>Panel de Control Ejecutivo</p>", unsafe_allow_html=True)
+
 st.divider()
 
 # 4. ENTRADA DE DATOS
@@ -119,7 +122,7 @@ with st.expander("🔐 Acceso Administrativo (Solo Yajaira)"):
         # WhatsApp con info privada
         texto_privado = texto_ws + f"\n\n*INFO PRIVADA*\n💎 Ganancia: ${utilidad_yaja:,.2f}\n🚛 Socio: ${pago_socio:,.2f}"
         link_privado = f"https://wa.me/{mi_numero}?text={urllib.parse.quote(texto_privado)}"
-        st.markdown(f'<a href="{link_privado}" target="_blank">Enviar Reporte con Ganancia</a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{link_privado}" target="_blank" style="color: #00FF00; text-decoration: none;">➡️ Enviar Reporte con Ganancia</a>', unsafe_allow_html=True)
     elif clave_admin != "":
         st.error("Clave de administrador incorrecta")
 
