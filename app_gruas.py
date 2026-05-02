@@ -41,7 +41,7 @@ if menu == "📱 Cotizador":
             modelo = st.text_input("Modelo del Auto")
         with col2:
             origen = st.text_input("¿Dónde está el auto?")
-            destino = st.text_input("¿A dónde va?")
+            destino = st.text_input("¿Lugar de Destino?")
         
         # Opciones de falla (Las que te gustaron)
         tipo_falla = st.selectbox("¿Qué problema tiene el auto?", [
