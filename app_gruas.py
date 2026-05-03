@@ -87,7 +87,7 @@ if menu == "📱 Cotizador":
                 f"📝 *Notas:* {notas}"
             )
             mensaje_url = urllib.parse.quote(texto)
-            mi_numero = "528132454641" 
+            mi_numero = "528143029578" 
             whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
             
             st.markdown(f'''
