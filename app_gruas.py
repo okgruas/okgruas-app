@@ -135,13 +135,4 @@ if submit_rs:
     else:
         st.error("⚠️ El nombre es necesario para continuar.")
 
-# 6. PANEL ADMIN
-st.write("<br><br>", unsafe_allow_html=True)
-with st.expander("🔐 Acceso Administrativo"):
-    clave_admin = st.text_input("Introduce Clave", type="password")
-    if clave_admin == "RS1020":
-        st.success("Acceso Confirmado")
-        monto_serv = st.number_input("Costo pactado ($)", value=800)
-        st.metric("Comisión OKGRUAS (10%)", f"${monto_serv * 0.10:,.2f}")
-
 st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
