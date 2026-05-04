@@ -5,7 +5,7 @@ import os
 # 1. CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="OKGRUAS RS - Solicitud", page_icon="🚛", layout="centered")
 
-# 2. ESTILO VISUAL TOTAL (Negro, Verde Neón y Limpieza de Interfaz)
+# 2. ESTILO VISUAL "BLINDADO" (Negro, Verde Neón y Limpieza de Interfaz)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
@@ -15,29 +15,38 @@ st.markdown("""
         background-color: #000000 !important;
     }
 
+    /* ELIMINAR MENÚS, CORONA, MARCA DE AGUA Y BARRAS DE STREAMLIT */
+    header, footer, .stAppDeployButton, #MainMenu {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* BLOQUEO ESPECÍFICO DE ICONOS EN CELULARES (Toolbar, Decoration, Status) */
+    [data-testid="stHeader"], 
+    [data-testid="stDecoration"], 
+    [data-testid="stToolbar"], 
+    [data-testid="stStatusWidget"],
+    [data-testid="manage-app-button"],
+    button[title="View source"], 
+    button[title="Manage app"],
+    .st-emotion-cache-15z92p5, 
+    .st-emotion-cache-6q9sum {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* ELIMINAR ESPACIO BLANCO SUPERIOR */
+    .block-container {
+        padding-top: 0rem !important;
+    }
+
     /* TIPOGRAFÍA Y COLOR DE TEXTO */
     html, body, [class*="css"], .stMarkdown {
         font-family: 'Montserrat', sans-serif;
         color: #FFFFFF !important;
     }
 
-    /* OCULTAR ELEMENTOS DE STREAMLIT (Corona, Menú, Footer) */
-    #MainMenu {visibility: hidden;} 
-    footer {visibility: hidden;}    
-    header {visibility: hidden;}    
-    
-    .stAppDeployButton {display: none !important;} 
-    [data-testid="stStatusWidget"] {display: none !important;}
-    [data-testid="stDecoration"] {display: none !important;}
-    [data-testid="stHeader"] {display: none !important;}
-    [data-testid="stToolbar"] {display: none !important;}
-    
-    .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0rem !important;
-    }
-
-    /* ESTILO DE INPUTS */
+    /* ESTILO DE CAJAS DE TEXTO (INPUTS) */
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
         background-color: #1A1A1A !important; 
         color: #00FF00 !important; 
@@ -48,11 +57,13 @@ st.markdown("""
     label { 
         color: #00FF00 !important; 
         font-weight: bold !important; 
+        font-size: 1.1rem !important;
     }
 
     /* TÍTULOS */
     h1, h2, h3 { 
         color: #00FF00 !important; 
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
     }
 
     /* BOTÓN DEL FORMULARIO */
@@ -70,6 +81,7 @@ st.markdown("""
         color: #000000 !important;
     }
 
+    /* LÍNEA DIVISORIA VERDE */
     hr {
         border-top: 1px solid #00FF00 !important;
     }
@@ -112,9 +124,9 @@ with st.form("solicitud_servicio"):
         "Otro (Especificar en notas)"
     ])
     
-    notas = st.text_area("Notas adicionales")
+    notas = st.text_area("Notas adicionales (ej. sótano, sin llaves, etc.)")
     
-    st.markdown("<p style='color: #00FF00;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #00FF00; font-size: 0.9rem;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p>", unsafe_allow_html=True)
     
     btn_enviar = st.form_submit_button("📩 SOLICITAR COTIZACIÓN POR WHATSAPP")
 
@@ -145,4 +157,4 @@ if btn_enviar:
     else:
         st.error("⚠️ Por favor, llena los campos obligatorios.")
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Programación Profesional</p>", unsafe_allow_html=True)
