@@ -2,7 +2,7 @@ import streamlit as st
 import urllib.parse
 import os
 
-# 1. CONFIGURACIÓN DE LA PÁGINA
+# 1. CONFIGURACIÓN
 st.set_page_config(page_title="OKGRUAS RS - Cotización", page_icon="🚛", layout="centered")
 
 # 2. ESTILO VISUAL "NEÓN RS"
@@ -36,8 +36,8 @@ with st.sidebar:
     clave_admin = st.text_input("Clave", type="password", key="admin_key")
     if clave_admin == "RS1020":
         st.success("Acceso Admin")
-        monto_serv = st.number_input("Monto Final ($)", value=800)
-        st.metric("Tu Comisión (10%)", f"${monto_serv * 0.10:,.2f}")
+        monto_serv = st.number_input("Costo del servicio ($)", value=800)
+        st.metric("Tu Ganancia (10%)", f"${monto_serv * 0.10:,.2f}")
 
 # 3. CABECERA
 col_h1, col_h2 = st.columns([1, 4])
@@ -45,32 +45,23 @@ with col_h1:
     st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True)
 with col_h2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888;'>Área Metropolitana y Foráneos</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888;'>Servicio en Monterrey y Área Metropolitana</p>", unsafe_allow_html=True)
 
 st.divider()
 
-# --- TARIFAS ---
-c_tar1, c_tar2 = st.columns(2)
-with c_tar1:
-    st.markdown("📍 **Banderazo:** $800.00")
-with c_tar2:
-    st.markdown("🛣️ **Km Extra:** $25.00")
+# 4. FORMULARIO FLEXIBLE
+st.markdown("### 📋 Datos del Servicio")
 
-# 4. FORMULARIO
-st.markdown("### 📋 Cotización de Servicio")
-
-with st.form("form_rs_final"):
+with st.form("form_rs_flex"):
     col_v1, col_v2 = st.columns(2)
     with col_v1:
         nombre = st.text_input("Nombre del Cliente")
-        # --- CAMBIO DE LUGAR AQUÍ ---
         año_auto = st.text_input("Año")
         color = st.text_input("Color del Auto")
     with col_v2:
-        # --- Y AQUÍ TAMBIÉN ---
         vehiculo = st.text_input("Marca y Modelo")
         placas_auto = st.text_input("Placas")
-        zona_serv = st.selectbox("Zona", ["Local (Mty)", "Foráneo"])
+        zona_serv = st.selectbox("Zona Sugerida", ["Local (Mty)", "Foráneo"])
 
     st.divider()
     
@@ -84,7 +75,7 @@ with st.form("form_rs_final"):
 
     st.divider()
     
-    st.markdown("#### 🛠️ Estado Físico")
+    st.markdown("#### 🛠️ Estado del Vehículo")
     cf1, cf2 = st.columns(2)
     with cf1:
         is_neutral = st.checkbox("se puede poner en neutral")
@@ -92,25 +83,30 @@ with st.form("form_rs_final"):
     with cf2:
         falla_tipo = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Bloqueado"])
 
-    notas_serv = st.text_area("Indicaciones extra")
+    notas_serv = st.text_area("Notas adicionales")
+    
+    st.markdown("<p style='color: #00FF00; font-size: 0.85rem;'>💡 Al enviar, un asesor se comunicará contigo para confirmar el costo y tiempo de llegada.</p>", unsafe_allow_html=True)
     
     submit_rs = st.form_submit_button("🚀 SOLICITAR AHORA")
 
 # 5. ENVÍO WHATSAPP
 if submit_rs:
-    if nombre and vehiculo and punto_recoleccion and punto_destino:
+    # Solo el nombre es obligatorio para saber con quién hablar
+    if nombre:
         n_txt = "SÍ" if is_neutral else "NO"
         g_txt = "SÍ" if is_giro else "NO"
         
+        # Estructura del mensaje solicitada
         msg = (
-            f"*OKGRUAS RS - NUEVA SOLICITUD*\n"
+            f"*NUEVA SOLICITUD OKGRUAS RS*\n"
+            f"Buen día compañeros solicitando su apoyo\n"
             f"--------------------------------\n"
             f"👤 *Cliente:* {nombre}\n"
-            f"🚗 *Auto:* {vehiculo} ({año_auto})\n"
+            f"🚗 *Auto:* {vehiculo if vehiculo else 'No especificado'} ({año_auto if año_auto else 'N/A'})\n"
             f"🎨 *Color:* {color} | *Placas:* {placas_auto}\n"
             f"--------------------------------\n"
-            f"📍 *Origen:* {punto_recoleccion}\n"
-            f"🏁 *Punto Destino:* {punto_destino}\n"
+            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Por confirmar vía llamada'}\n"
+            f"🏁 *Punto Destino:* {punto_destino if punto_destino else 'Por confirmar vía llamada'}\n"
             f"🏠 *Destino:* {tipo_lugar}\n"
             f"--------------------------------\n"
             f"⚙️ *¿Neutral?:* {n_txt}\n"
@@ -118,19 +114,18 @@ if submit_rs:
             f"🚨 *Falla:* {falla_tipo}\n"
             f"📝 *Notas:* {notas_serv}\n"
             f"--------------------------------\n"
-            f"💰 *Banderazo:* $800.00\n"
-            f"🛣️ *Km Extra:* $25.00"
+            f"💰 *Costo:* Pendiente por confirmar con asesor."
         )
         
         link_ws = f"https://wa.me/528143029578?text={urllib.parse.quote(msg)}"
         st.markdown(f'''
             <a href="{link_ws}" target="_blank" style="text-decoration: none;">
                 <div style="background-color: #00FF00; color: black; padding: 15px; border-radius: 10px; width: 100%; text-align: center; font-weight: bold; font-size: 18px;">
-                    ✅ ENVIAR POR WHATSAPP
+                    ✅ ENVIAR REPORTE POR WHATSAPP
                 </div>
             </a>
         ''', unsafe_allow_html=True)
     else:
-        st.error("⚠️ Llena los campos: Nombre, Vehículo y Direcciones.")
+        st.error("⚠️ Por favor ingresa al menos tu nombre para poder contactarte.")
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Monterrey</p>", unsafe_allow_html=True)
