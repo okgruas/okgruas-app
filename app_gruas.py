@@ -1,160 +1,80 @@
 import streamlit as st
-import urllib.parse
+import pandas as pd
 import os
 
-# 1. CONFIGURACIÓN DE LA PÁGINA
-st.set_page_config(page_title="OKGRUAS RS - Solicitud", page_icon="🚛", layout="centered")
+# 1. Configuración de la página
+st.set_page_config(page_title="OKGRUAS RS - Gestión", layout="wide", page_icon="🏗️")
 
-# 2. ESTILO VISUAL "BLINDADO" (Negro, Verde Neón y Limpieza de Interfaz)
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+# --- FUNCIÓN DE CARGA DE DATOS ---
+def cargar_datos():
+    archivo = "servicios_gruas.csv"
+    if not os.path.exists(archivo):
+        # Creamos un archivo de ejemplo si no existe
+        df = pd.DataFrame(columns=['fecha', 'cliente', 'servicio', 'monto', 'socio'])
+        df.to_csv(archivo, index=False)
+        return df
+    return pd.read_csv(archivo)
+
+df_servicios = cargar_datos()
+
+# --- BARRA LATERAL (Acceso Secreto) ---
+st.sidebar.title("Configuración")
+modo_admin = st.sidebar.checkbox("Acceso Administrador")
+
+# --- VISTA PÚBLICA (Lo que todos ven) ---
+st.title("🏗️ OKGRUAS RS - Servicios de Asistencia")
+
+st.info("✨ **Compromiso RS:** Tu seguridad es nuestra prioridad. En OKGRUAS RS respaldamos cada servicio para tu total tranquilidad. Si surge cualquier inconveniente, nosotros respondemos.")
+
+# Buscador para clientes
+buscar = st.text_input("🔍 Buscar mi servicio (por nombre de cliente):")
+
+if not df_servicios.empty:
+    # Mostramos solo información pública
+    vista_publica = df_servicios[['fecha', 'servicio', 'cliente']]
+    if buscar:
+        vista_publica = vista_publica[vista_publica['cliente'].str.contains(buscar, case=False)]
     
-    /* FORZAR FONDO NEGRO ABSOLUTO */
-    .stApp {
-        background-color: #000000 !important;
-    }
+    st.subheader("Servicios en Curso / Finalizados")
+    st.dataframe(vista_publica, use_container_width=True)
+else:
+    st.write("No hay servicios registrados por el momento.")
 
-    /* ELIMINAR MENÚS, CORONA, MARCA DE AGUA Y BARRAS DE STREAMLIT */
-    header, footer, .stAppDeployButton, #MainMenu {
-        display: none !important;
-        visibility: hidden !important;
-    }
+# --- VISTA ADMINISTRADOR (Solo con la 'llave') ---
+if modo_admin:
+    st.sidebar.markdown("---")
+    password = st.sidebar.text_input("Introduce tu clave:", type="password")
     
-    /* BLOQUEO ESPECÍFICO DE ICONOS EN CELULARES (Toolbar, Decoration, Status) */
-    [data-testid="stHeader"], 
-    [data-testid="stDecoration"], 
-    [data-testid="stToolbar"], 
-    [data-testid="stStatusWidget"],
-    [data-testid="manage-app-button"],
-    button[title="View source"], 
-    button[title="Manage app"],
-    .st-emotion-cache-15z92p5, 
-    .st-emotion-cache-6q9sum {
-        display: none !important;
-        visibility: hidden !important;
-    }
-
-    /* ELIMINAR ESPACIO BLANCO SUPERIOR */
-    .block-container {
-        padding-top: 0rem !important;
-    }
-
-    /* TIPOGRAFÍA Y COLOR DE TEXTO */
-    html, body, [class*="css"], .stMarkdown {
-        font-family: 'Montserrat', sans-serif;
-        color: #FFFFFF !important;
-    }
-
-    /* ESTILO DE CAJAS DE TEXTO (INPUTS) */
-    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
-        background-color: #1A1A1A !important; 
-        color: #00FF00 !important; 
-        border: 1px solid #00FF00 !important; 
-    }
-
-    /* ETIQUETAS EN VERDE NEÓN */
-    label { 
-        color: #00FF00 !important; 
-        font-weight: bold !important; 
-        font-size: 1.1rem !important;
-    }
-
-    /* TÍTULOS */
-    h1, h2, h3 { 
-        color: #00FF00 !important; 
-        text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-    }
-
-    /* BOTÓN DEL FORMULARIO */
-    .stButton>button { 
-        background-color: #00FF00 !important; 
-        color: #000000 !important; 
-        border-radius: 10px; 
-        font-weight: bold;
-        border: none;
-        height: 3em;
-    }
-    
-    .stButton>button:hover {
-        box-shadow: 0 0 20px #00FF00;
-        color: #000000 !important;
-    }
-
-    /* LÍNEA DIVISORIA VERDE */
-    hr {
-        border-top: 1px solid #00FF00 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 3. CABECERA
-col_head1, col_head2 = st.columns([1, 4])
-
-with col_head1:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=100)
-    else:
-        st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True)
-
-with col_head2:
-    st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888; margin-top: 0px;'>Solicitud de Servicio de Grúa</p>", unsafe_allow_html=True)
-
-st.divider()
-
-# 4. FORMULARIO DE SOLICITUD
-st.markdown("### 📱 Completa los datos para tu cotización")
-
-with st.form("solicitud_servicio"):
-    col1, col2 = st.columns(2)
-    with col1:
-        nombre = st.text_input("Tu Nombre")
-        modelo = st.text_input("Modelo del Auto")
-    with col2:
-        origen = st.text_input("📍 Punto de Recolección")
-        destino = st.text_input("🏁 Punto de Entrega")
-    
-    tipo_falla = st.selectbox("¿Qué problema presenta el vehículo?", [
-        "Falla Mecánica", 
-        "Choque / Siniestro", 
-        "Llanta Ponchada", 
-        "Sin Batería", 
-        "Auto Bloqueado",
-        "Otro (Especificar en notas)"
-    ])
-    
-    notas = st.text_area("Notas adicionales (ej. sótano, sin llaves, etc.)")
-    
-    st.markdown("<p style='color: #00FF00; font-size: 0.9rem;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p>", unsafe_allow_html=True)
-    
-    btn_enviar = st.form_submit_button("📩 SOLICITAR COTIZACIÓN POR WHATSAPP")
-
-# 5. LÓGICA DE ENVÍO
-if btn_enviar:
-    if nombre and modelo and origen and destino:
-        texto = (
-            f"*NUEVA SOLICITUD DE SERVICIO - OKGRUAS RS*\n\n"
-            f"👤 *Cliente:* {nombre}\n"
-            f"🚗 *Vehículo:* {modelo}\n"
-            f"🛠️ *Problema:* {tipo_falla}\n"
-            f"📍 *Origen:* {origen}\n"
-            f"🏁 *Destino:* {destino}\n"
-            f"📝 *Notas:* {notas}\n\n"
-            f"🧐 *Solicito cotización y tiempo de llegada.*"
-        )
-        mensaje_url = urllib.parse.quote(texto)
-        mi_numero = "528143029578"
-        whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
+    if password == "RS1020": # <--- ESTA ES TU CLAVE SECRETA
+        st.markdown("---")
+        st.header("📊 Panel de Control de Socios (Privado)")
         
-        st.markdown(f'''
-            <a href="{whatsapp_link}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: #25D366; color: white; padding: 15px; border-radius: 10px; width: 100%; text-align: center; font-weight: bold; font-size: 16px; cursor: pointer;">
-                    ✅ CLICK AQUÍ PARA CONFIRMAR EN WHATSAPP
-                </div>
-            </a>
-        ''', unsafe_allow_html=True)
-    else:
-        st.error("⚠️ Por favor, llena los campos obligatorios.")
+        if not df_servicios.empty:
+            # Cálculos automáticos
+            df_servicios['monto'] = pd.to_numeric(df_servicios['monto'], errors='coerce')
+            df_servicios['comision'] = df_servicios['monto'] * 0.10
+            
+            # Métricas rápidas
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("Venta Total", f"${df_servicios['monto'].sum():,.2f}")
+            with c2:
+                st.metric("Comisiones por Cobrar (10%)", f"${df_servicios['comision'].sum():,.2f}", delta_color="normal")
+            with c3:
+                st.metric("Total Servicios", len(df_servicios))
+            
+            st.write("### Desglose por Socio")
+            # Mostramos la tabla completa con el nombre del socio y la comisión
+            st.dataframe(df_servicios[['fecha', 'cliente', 'socio', 'monto', 'comision']], use_container_width=True)
+            
+            # Botón para descargar reporte
+            csv = df_servicios.to_csv(index=False).encode('utf-8')
+            st.download_button("Descargar Reporte de Comisiones", csv, "reporte_rs.csv", "text/csv")
+        else:
+            st.warning("Aún no hay datos financieros para mostrar.")
+    elif password != "":
+        st.sidebar.error("Clave incorrecta")
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Programación Profesional</p>", unsafe_allow_html=True)
+# --- PIE DE PÁGINA ---
+st.markdown("---")
+st.caption("© 2026 OKGRUAS RS - Monterrey, N.L. | Sistema de gestión de flota y socios.")
