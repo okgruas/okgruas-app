@@ -11,7 +11,7 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
     .stApp { background-color: #000000 !important; }
     header, footer, .stAppDeployButton, #MainMenu { display: none !important; visibility: hidden !important; }
-    .block-container { padding-top: 1rem !important; }
+    .block-container { padding-top: 2rem !important; }
     html, body, [class*="css"], .stMarkdown { font-family: 'Montserrat', sans-serif; color: #FFFFFF !important; }
     
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
@@ -39,15 +39,18 @@ with st.sidebar:
         monto_serv = st.number_input("Costo del servicio ($)", value=800)
         st.metric("Tu Ganancia (10%)", f"${monto_serv * 0.10:,.2f}")
 
-# 3. CABECERA CON LOGO
-# Reemplaza 'URL_DE_TU_LOGO' con el enlace de tu imagen (ej. de GitHub Raw)
-col_logo1, col_logo2 = st.columns([1, 3])
+# 3. CABECERA CON LOGO (RESTAURADO)
+col_logo1, col_logo2 = st.columns([1, 2])
 with col_logo1:
-    # Si tienes el archivo en el mismo nivel que el script en GitHub, pon el nombre aquí:
-    # st.image("logo.png", width=100) 
-    st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True) # Icono provisional
+    # Intenta cargar el logo desde tu carpeta de GitHub. 
+    # Asegúrate de que el nombre coincida (ej. logo.png, logo.jpg)
+    try:
+        st.image("logo.png", width=120) 
+    except:
+        st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True)
+
 with col_logo2:
-    st.markdown("<h1 style='margin-bottom: 0px; padding-top: 5px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color: #888;'>Servicio en Monterrey y Área Metropolitana</p>", unsafe_allow_html=True)
 
 st.divider()
@@ -134,6 +137,6 @@ if submit_rs:
             </a>
         ''', unsafe_allow_html=True)
     else:
-        st.error("⚠️ El nombre es necesario para el reporte.")
+        st.error("⚠️ Ingresa al nombre para continuar.")
 
 st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
