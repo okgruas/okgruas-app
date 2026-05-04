@@ -63,10 +63,12 @@ with st.form("form_rs_final"):
     col_v1, col_v2 = st.columns(2)
     with col_v1:
         nombre = st.text_input("Nombre del Cliente")
-        vehiculo = st.text_input("Marca y Modelo")
+        # --- CAMBIO DE LUGAR AQUÍ ---
+        año_auto = st.text_input("Año")
         color = st.text_input("Color del Auto")
     with col_v2:
-        año_auto = st.text_input("Año")
+        # --- Y AQUÍ TAMBIÉN ---
+        vehiculo = st.text_input("Marca y Modelo")
         placas_auto = st.text_input("Placas")
         zona_serv = st.selectbox("Zona", ["Local (Mty)", "Foráneo"])
 
