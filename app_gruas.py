@@ -21,42 +21,38 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
-    /* --- OCULTAR ELEMENTOS DE STREAMLIT PARA EL CLIENTE --- */
-    #MainMenu {visibility: hidden;} /* Menú de 3 rayas y corona */
-    footer {visibility: hidden;}    /* Marca de agua "Made with Streamlit" */
-    header {visibility: hidden;}    /* Espacio superior */
+    /* OCULTAR ELEMENTOS DE STREAMLIT (Corona, Menú, Footer) */
+    #MainMenu {visibility: hidden;} 
+    footer {visibility: hidden;}    
+    header {visibility: hidden;}    
     
-    /* BLOQUEO DE BARRAS DE GESTIÓN Y DECORACIÓN */
     .stAppDeployButton {display: none !important;} 
     [data-testid="stStatusWidget"] {display: none !important;}
     [data-testid="stDecoration"] {display: none !important;}
     [data-testid="stHeader"] {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
     
-    /* ELIMINAR ESPACIOS BLANCOS EXTRAS */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 0rem !important;
     }
 
-    /* ESTILO DE INPUTS (CAJAS DE TEXTO) */
+    /* ESTILO DE INPUTS */
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
         background-color: #1A1A1A !important; 
         color: #00FF00 !important; 
         border: 1px solid #00FF00 !important; 
     }
 
-    /* ETIQUETAS (LABELS) EN VERDE NEÓN */
+    /* ETIQUETAS EN VERDE NEÓN */
     label { 
         color: #00FF00 !important; 
         font-weight: bold !important; 
-        font-size: 1.1rem !important;
     }
 
     /* TÍTULOS */
     h1, h2, h3 { 
         color: #00FF00 !important; 
-        text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
     }
 
     /* BOTÓN DEL FORMULARIO */
@@ -74,7 +70,6 @@ st.markdown("""
         color: #000000 !important;
     }
 
-    /* LÍNEA DIVISORIA VERDE */
     hr {
         border-top: 1px solid #00FF00 !important;
     }
@@ -117,6 +112,37 @@ with st.form("solicitud_servicio"):
         "Otro (Especificar en notas)"
     ])
     
-    notas = st.text_area("Notas adicionales (ej. si está en un sótano, no tiene llaves, etc.)")
+    notas = st.text_area("Notas adicionales")
     
-    st.markdown("<p style='color: #00FF00; font-size: 0.9rem;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p
+    st.markdown("<p style='color: #00FF00;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p>", unsafe_allow_html=True)
+    
+    btn_enviar = st.form_submit_button("📩 SOLICITAR COTIZACIÓN POR WHATSAPP")
+
+# 5. LÓGICA DE ENVÍO
+if btn_enviar:
+    if nombre and modelo and origen and destino:
+        texto = (
+            f"*NUEVA SOLICITUD DE SERVICIO - OKGRUAS RS*\n\n"
+            f"👤 *Cliente:* {nombre}\n"
+            f"🚗 *Vehículo:* {modelo}\n"
+            f"🛠️ *Problema:* {tipo_falla}\n"
+            f"📍 *Origen:* {origen}\n"
+            f"🏁 *Destino:* {destino}\n"
+            f"📝 *Notas:* {notas}\n\n"
+            f"🧐 *Solicito cotización y tiempo de llegada.*"
+        )
+        mensaje_url = urllib.parse.quote(texto)
+        mi_numero = "528143029578"
+        whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
+        
+        st.markdown(f'''
+            <a href="{whatsapp_link}" target="_blank" style="text-decoration: none;">
+                <div style="background-color: #25D366; color: white; padding: 15px; border-radius: 10px; width: 100%; text-align: center; font-weight: bold; font-size: 16px; cursor: pointer;">
+                    ✅ CLICK AQUÍ PARA CONFIRMAR EN WHATSAPP
+                </div>
+            </a>
+        ''', unsafe_allow_html=True)
+    else:
+        st.error("⚠️ Por favor, llena los campos obligatorios.")
+
+st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026</p>", unsafe_allow_html=True)
