@@ -59,7 +59,7 @@ with col_logo1:
 
 with col_logo2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888;'>Servicio en Monterrey y Área Metropolitana</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana y Otros Municipios</p>", unsafe_allow_html=True)
 
 # --- BOTÓN DE LLAMADA DIRECTA (NUEVO) ---
 st.markdown('<a href="tel:8143029578" class="call-button">📞 LLAMAR AHORA: 81 4302 9578</a>', unsafe_allow_html=True)
