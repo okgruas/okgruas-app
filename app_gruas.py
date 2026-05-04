@@ -34,7 +34,7 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### 🔐 Admin OKGRUAS")
     clave_admin = st.text_input("Clave", type="password", key="admin_key")
-    if clave_admin == "RS1020":
+    if clave_admin == "RS2026":
         st.success("Acceso Admin")
         monto_serv = st.number_input("Costo del servicio ($)", value=800)
         st.metric("Tu Ganancia (10%)", f"${monto_serv * 0.10:,.2f}")
@@ -51,7 +51,7 @@ with col_logo1:
 
 with col_logo2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888;'>Servicio en Monterrey y Área Metropolitana</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana y Otros Municipios</p>", unsafe_allow_html=True)
 
 st.divider()
 
