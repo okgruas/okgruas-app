@@ -2,79 +2,82 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Configuración de la página
-st.set_page_config(page_title="OKGRUAS RS - Gestión", layout="wide", page_icon="🏗️")
+# 1. Configuración idéntica a tu diseño favorito
+st.set_page_config(page_title="OKGRUAS RS", layout="wide")
 
-# --- FUNCIÓN DE CARGA DE DATOS ---
+st.title("🏗️ OKGRUAS RS - Catálogo de Servicios")
+
+# --- CARGA DE DATOS SEGURA ---
 def cargar_datos():
-    archivo = "servicios_gruas.csv"
+    archivo = "autos.csv"  # Asegúrate que este archivo tenga la columna 'socio'
     if not os.path.exists(archivo):
-        # Creamos un archivo de ejemplo si no existe
-        df = pd.DataFrame(columns=['fecha', 'cliente', 'servicio', 'monto', 'socio'])
-        df.to_csv(archivo, index=False)
-        return df
-    return pd.read_csv(archivo)
+        return None
+    try:
+        df = pd.read_csv(archivo)
+        df.columns = df.columns.str.strip().lower()
+        df['precio'] = pd.to_numeric(df['precio'], errors='coerce')
+        return df.dropna(subset=['nombre', 'precio'])
+    except:
+        return None
 
-df_servicios = cargar_datos()
+df_datos = cargar_datos()
 
-# --- BARRA LATERAL (Acceso Secreto) ---
-st.sidebar.title("Configuración")
-modo_admin = st.sidebar.checkbox("Acceso Administrador")
+# --- BARRA LATERAL (Filtros + Acceso Admin) ---
+st.sidebar.header("Filtros de Búsqueda")
+precio_max = st.sidebar.slider("Presupuesto Máximo", 0, 1500000, 500000)
+buscar = st.sidebar.text_input("Buscar servicio:")
 
-# --- VISTA PÚBLICA (Lo que todos ven) ---
-st.title("🏗️ OKGRUAS RS - Servicios de Asistencia")
+st.sidebar.markdown("---")
+# La "Puerta Secreta"
+es_admin = st.sidebar.checkbox("🔒 Modo Administrador")
 
-st.info("✨ **Compromiso RS:** Tu seguridad es nuestra prioridad. En OKGRUAS RS respaldamos cada servicio para tu total tranquilidad. Si surge cualquier inconveniente, nosotros respondemos.")
-
-# Buscador para clientes
-buscar = st.text_input("🔍 Buscar mi servicio (por nombre de cliente):")
-
-if not df_servicios.empty:
-    # Mostramos solo información pública
-    vista_publica = df_servicios[['fecha', 'servicio', 'cliente']]
-    if buscar:
-        vista_publica = vista_publica[vista_publica['cliente'].str.contains(buscar, case=False)]
+# --- RENDERIZADO DEL CATÁLOGO (Lo que ve el cliente) ---
+if df_datos is not None and not df_datos.empty:
     
-    st.subheader("Servicios en Curso / Finalizados")
-    st.dataframe(vista_publica, use_container_width=True)
+    # Leyenda de garantía simple (Lo que me pediste)
+    st.info("✅ **Garantía RS:** Si surge algún detalle con el servicio, la empresa responde. Tu tranquilidad es primero.")
+
+    # Filtramos
+    df_filtrado = df_datos[
+        (df_datos['precio'] <= precio_max) & 
+        (df_datos['nombre'].str.contains(buscar, case=False, na=False))
+    ]
+
+    # Diseño de 3 columnas (Exactamente como antes)
+    cols = st.columns(3)
+
+    for i, (index, row) in enumerate(df_filtrado.iterrows()):
+        with cols[i % 3]:
+            # Imagen local
+            ruta_foto = str(row['img']).strip()
+            if os.path.exists(ruta_foto):
+                st.image(ruta_foto, use_container_width=True)
+            else:
+                st.image("https://via.placeholder.com/300/172b4d/ffffff?text=OKGRUAS+RS", use_container_width=True)
+            
+            st.subheader(row["nombre"])
+            st.metric("Precio", f"${row['precio']:,.0f}")
+            
+            # Parte pública: Detalles y WhatsApp
+            with st.expander("Ver detalles del servicio"):
+                st.write(row.get("detalles", "Servicio disponible en Monterrey y área metropolitana."))
+                url_wa = f"https://wa.me/521234567890?text=Hola, me interesa el servicio: {row['nombre']}"
+                st.link_button("Solicitar Grúa 💬", url_wa)
+            
+            # --- PARTE PRIVADA (Solo aparece si marcas el checkbox y pones la clave) ---
+            if es_admin:
+                clave = st.sidebar.text_input("Introduce clave Admin:", type="password", key="admin_key")
+                if clave == "RS1020":
+                    st.markdown("---")
+                    st.warning(f"🕵️ **Info Socio:** {row.get('socio', 'No asignado')}")
+                    comision = row['precio'] * 0.10
+                    st.success(f"💰 **Tu Comisión (10%):** ${comision:,.2f}")
+                elif clave != "":
+                    st.sidebar.error("Clave incorrecta")
+
 else:
-    st.write("No hay servicios registrados por el momento.")
+    st.warning("⚠️ No encontré el archivo 'autos.csv'. Revisa que esté en la carpeta.")
 
-# --- VISTA ADMINISTRADOR (Solo con la 'llave') ---
-if modo_admin:
-    st.sidebar.markdown("---")
-    password = st.sidebar.text_input("Introduce tu clave:", type="password")
-    
-    if password == "RS1020": # <--- ESTA ES TU CLAVE SECRETA
-        st.markdown("---")
-        st.header("📊 Panel de Control de Socios (Privado)")
-        
-        if not df_servicios.empty:
-            # Cálculos automáticos
-            df_servicios['monto'] = pd.to_numeric(df_servicios['monto'], errors='coerce')
-            df_servicios['comision'] = df_servicios['monto'] * 0.10
-            
-            # Métricas rápidas
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.metric("Venta Total", f"${df_servicios['monto'].sum():,.2f}")
-            with c2:
-                st.metric("Comisiones por Cobrar (10%)", f"${df_servicios['comision'].sum():,.2f}", delta_color="normal")
-            with c3:
-                st.metric("Total Servicios", len(df_servicios))
-            
-            st.write("### Desglose por Socio")
-            # Mostramos la tabla completa con el nombre del socio y la comisión
-            st.dataframe(df_servicios[['fecha', 'cliente', 'socio', 'monto', 'comision']], use_container_width=True)
-            
-            # Botón para descargar reporte
-            csv = df_servicios.to_csv(index=False).encode('utf-8')
-            st.download_button("Descargar Reporte de Comisiones", csv, "reporte_rs.csv", "text/csv")
-        else:
-            st.warning("Aún no hay datos financieros para mostrar.")
-    elif password != "":
-        st.sidebar.error("Clave incorrecta")
-
-# --- PIE DE PÁGINA ---
+# Pie de página simple
 st.markdown("---")
-st.caption("© 2026 OKGRUAS RS - Monterrey, N.L. | Sistema de gestión de flota y socios.")
+st.caption("OKGRUAS RS - Líderes en logística y rescate.")
