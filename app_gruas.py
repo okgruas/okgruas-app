@@ -10,24 +10,36 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
     
-    /* FORZAR FONDO NEGRO Y TIPOGRAFÍA */
+    /* FORZAR FONDO NEGRO ABSOLUTO */
     .stApp {
         background-color: #000000 !important;
     }
 
+    /* TIPOGRAFÍA Y COLOR DE TEXTO */
     html, body, [class*="css"], .stMarkdown {
         font-family: 'Montserrat', sans-serif;
         color: #FFFFFF !important;
     }
 
-    /* OCULTAR ELEMENTOS DE STREAMLIT (Manage App, Menú, Footer) */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stAppDeployButton {display: none;}
-    [data-testid="stStatusWidget"] {visibility: hidden;}
-    header {visibility: hidden;}
+    /* --- OCULTAR ELEMENTOS DE STREAMLIT PARA EL CLIENTE --- */
+    #MainMenu {visibility: hidden;} /* Menú de 3 rayas y corona */
+    footer {visibility: hidden;}    /* Marca de agua "Made with Streamlit" */
+    header {visibility: hidden;}    /* Espacio superior */
+    
+    /* BLOQUEO DE BARRAS DE GESTIÓN Y DECORACIÓN */
+    .stAppDeployButton {display: none !important;} 
+    [data-testid="stStatusWidget"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    
+    /* ELIMINAR ESPACIOS BLANCOS EXTRAS */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 0rem !important;
+    }
 
-    /* ESTILO DE INPUTS Y CAJAS DE TEXTO */
+    /* ESTILO DE INPUTS (CAJAS DE TEXTO) */
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
         background-color: #1A1A1A !important; 
         color: #00FF00 !important; 
@@ -107,35 +119,4 @@ with st.form("solicitud_servicio"):
     
     notas = st.text_area("Notas adicionales (ej. si está en un sótano, no tiene llaves, etc.)")
     
-    st.markdown("<p style='color: #00FF00; font-size: 0.9rem;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p>", unsafe_allow_html=True)
-    
-    btn_enviar = st.form_submit_button("📩 SOLICITAR COTIZACIÓN POR WHATSAPP")
-
-# 5. LÓGICA DE ENVÍO
-if btn_enviar:
-    if nombre and modelo and origen and destino:
-        texto = (
-            f"*NUEVA SOLICITUD DE SERVICIO - OKGRUAS RS*\n\n"
-            f"👤 *Cliente:* {nombre}\n"
-            f"🚗 *Vehículo:* {modelo}\n"
-            f"🛠️ *Problema:* {tipo_falla}\n"
-            f"📍 *Origen:* {origen}\n"
-            f"🏁 *Destino:* {destino}\n"
-            f"📝 *Notas:* {notas}\n\n"
-            f"🧐 *Solicito cotización y tiempo de llegada.*"
-        )
-        mensaje_url = urllib.parse.quote(texto)
-        mi_numero = "528143029578"
-        whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
-        
-        st.markdown(f'''
-            <a href="{whatsapp_link}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: #25D366; color: white; padding: 15px; border-radius: 10px; width: 100%; text-align: center; font-weight: bold; font-size: 16px; cursor: pointer;">
-                    ✅ CLICK AQUÍ PARA CONFIRMAR EN WHATSAPP
-                </div>
-            </a>
-        ''', unsafe_allow_html=True)
-    else:
-        st.error("⚠️ Por favor, llena los campos obligatorios.")
-
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #00FF00; font-size: 0.9rem;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p
