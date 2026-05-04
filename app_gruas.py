@@ -49,17 +49,24 @@ with col_h2:
 
 st.divider()
 
+# --- TARIFAS VISIBLES EN APP ---
+c_tar1, c_tar2 = st.columns(2)
+with c_tar1:
+    st.markdown("📍 **Banderazo:** $800.00")
+with c_tar2:
+    st.markdown("🛣️ **Km Extra:** $25.00")
+
 # 4. FORMULARIO FLEXIBLE
 st.markdown("### 📋 Datos del Servicio")
 
-with st.form("form_rs_flex"):
+with st.form("form_rs_final"):
     col_v1, col_v2 = st.columns(2)
     with col_v1:
         nombre = st.text_input("Nombre del Cliente")
-        año_auto = st.text_input("Año")
+        año_auto = st.text_input("Año") # Invertido como pediste
         color = st.text_input("Color del Auto")
     with col_v2:
-        vehiculo = st.text_input("Marca y Modelo")
+        vehiculo = st.text_input("Marca y Modelo") # Invertido como pediste
         placas_auto = st.text_input("Placas")
         zona_serv = st.selectbox("Zona Sugerida", ["Local (Mty)", "Foráneo"])
 
@@ -85,28 +92,28 @@ with st.form("form_rs_flex"):
 
     notas_serv = st.text_area("Notas adicionales")
     
-    st.markdown("<p style='color: #00FF00; font-size: 0.85rem;'>💡 Al enviar, un asesor se comunicará contigo para confirmar el costo y tiempo de llegada.</p>", unsafe_allow_html=True)
+    # Texto de aviso final en la APP
+    st.markdown("<p style='color: #00FF00; font-size: 0.95rem; text-align: center; font-weight: bold;'>⚠️ Un asesor se pondrá en contacto con usted para confirmar el costo total del servicio.</p>", unsafe_allow_html=True)
     
     submit_rs = st.form_submit_button("🚀 SOLICITAR AHORA")
 
 # 5. ENVÍO WHATSAPP
 if submit_rs:
-    # Solo el nombre es obligatorio para saber con quién hablar
     if nombre:
         n_txt = "SÍ" if is_neutral else "NO"
         g_txt = "SÍ" if is_giro else "NO"
         
-        # Estructura del mensaje solicitada
+        # Mensaje para WhatsApp (Sin el renglón de costo final)
         msg = (
             f"*NUEVA SOLICITUD OKGRUAS RS*\n"
             f"Buen día compañeros solicitando su apoyo\n"
             f"--------------------------------\n"
             f"👤 *Cliente:* {nombre}\n"
-            f"🚗 *Auto:* {vehiculo if vehiculo else 'No especificado'} ({año_auto if año_auto else 'N/A'})\n"
+            f"🚗 *Auto:* {vehiculo if vehiculo else 'N/A'} ({año_auto if año_auto else 'N/A'})\n"
             f"🎨 *Color:* {color} | *Placas:* {placas_auto}\n"
             f"--------------------------------\n"
-            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Por confirmar vía llamada'}\n"
-            f"🏁 *Punto Destino:* {punto_destino if punto_destino else 'Por confirmar vía llamada'}\n"
+            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Por confirmar'}\n"
+            f"🏁 *Punto Destino:* {punto_destino if punto_destino else 'Por confirmar'}\n"
             f"🏠 *Destino:* {tipo_lugar}\n"
             f"--------------------------------\n"
             f"⚙️ *¿Neutral?:* {n_txt}\n"
@@ -114,18 +121,18 @@ if submit_rs:
             f"🚨 *Falla:* {falla_tipo}\n"
             f"📝 *Notas:* {notas_serv}\n"
             f"--------------------------------\n"
-            f"💰 *Costo:* Pendiente por confirmar con asesor."
+            f"🧐 *Pendiente cotización final por asesor.*"
         )
         
         link_ws = f"https://wa.me/528143029578?text={urllib.parse.quote(msg)}"
         st.markdown(f'''
             <a href="{link_ws}" target="_blank" style="text-decoration: none;">
                 <div style="background-color: #00FF00; color: black; padding: 15px; border-radius: 10px; width: 100%; text-align: center; font-weight: bold; font-size: 18px;">
-                    ✅ ENVIAR REPORTE POR WHATSAPP
+                    ✅ ENVIAR POR WHATSAPP
                 </div>
             </a>
         ''', unsafe_allow_html=True)
     else:
-        st.error("⚠️ Por favor ingresa al menos tu nombre para poder contactarte.")
+        st.error("⚠️ Ingresa al menos tu nombre para continuar.")
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Monterrey</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Monterrey, N.L.</p>", unsafe_allow_html=True)
