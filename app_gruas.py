@@ -11,7 +11,7 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
     .stApp { background-color: #000000 !important; }
     header, footer, .stAppDeployButton, #MainMenu { display: none !important; visibility: hidden !important; }
-    .block-container { padding-top: 0rem !important; }
+    .block-container { padding-top: 1rem !important; }
     html, body, [class*="css"], .stMarkdown { font-family: 'Montserrat', sans-serif; color: #FFFFFF !important; }
     
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
@@ -39,34 +39,37 @@ with st.sidebar:
         monto_serv = st.number_input("Costo del servicio ($)", value=800)
         st.metric("Tu Ganancia (10%)", f"${monto_serv * 0.10:,.2f}")
 
-# 3. CABECERA
-col_h1, col_h2 = st.columns([1, 4])
-with col_h1:
-    st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True)
-with col_h2:
-    st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+# 3. CABECERA CON LOGO
+# Reemplaza 'URL_DE_TU_LOGO' con el enlace de tu imagen (ej. de GitHub Raw)
+col_logo1, col_logo2 = st.columns([1, 3])
+with col_logo1:
+    # Si tienes el archivo en el mismo nivel que el script en GitHub, pon el nombre aquí:
+    # st.image("logo.png", width=100) 
+    st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True) # Icono provisional
+with col_logo2:
+    st.markdown("<h1 style='margin-bottom: 0px; padding-top: 5px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color: #888;'>Servicio en Monterrey y Área Metropolitana</p>", unsafe_allow_html=True)
 
 st.divider()
 
-# --- TARIFAS VISIBLES EN APP ---
+# --- TARIFAS VISIBLES ---
 c_tar1, c_tar2 = st.columns(2)
 with c_tar1:
     st.markdown("📍 **Banderazo:** $800.00")
 with c_tar2:
     st.markdown("🛣️ **Km Extra:** $25.00")
 
-# 4. FORMULARIO FLEXIBLE
+# 4. FORMULARIO
 st.markdown("### 📋 Datos del Servicio")
 
 with st.form("form_rs_final"):
     col_v1, col_v2 = st.columns(2)
     with col_v1:
         nombre = st.text_input("Nombre del Cliente")
-        año_auto = st.text_input("Año") # Invertido como pediste
+        año_auto = st.text_input("Año")
         color = st.text_input("Color del Auto")
     with col_v2:
-        vehiculo = st.text_input("Marca y Modelo") # Invertido como pediste
+        vehiculo = st.text_input("Marca y Modelo")
         placas_auto = st.text_input("Placas")
         zona_serv = st.selectbox("Zona Sugerida", ["Local (Mty)", "Foráneo"])
 
@@ -92,7 +95,6 @@ with st.form("form_rs_final"):
 
     notas_serv = st.text_area("Notas adicionales")
     
-    # Texto de aviso final en la APP
     st.markdown("<p style='color: #00FF00; font-size: 0.95rem; text-align: center; font-weight: bold;'>⚠️ Un asesor se pondrá en contacto con usted para confirmar el costo total del servicio.</p>", unsafe_allow_html=True)
     
     submit_rs = st.form_submit_button("🚀 SOLICITAR AHORA")
@@ -103,7 +105,6 @@ if submit_rs:
         n_txt = "SÍ" if is_neutral else "NO"
         g_txt = "SÍ" if is_giro else "NO"
         
-        # Mensaje para WhatsApp (Sin el renglón de costo final)
         msg = (
             f"*NUEVA SOLICITUD OKGRUAS RS*\n"
             f"Buen día compañeros solicitando su apoyo\n"
@@ -133,6 +134,6 @@ if submit_rs:
             </a>
         ''', unsafe_allow_html=True)
     else:
-        st.error("⚠️ Ingresa al menos tu nombre para continuar.")
+        st.error("⚠️ El nombre es necesario para el reporte.")
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Monterrey, N.L.</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
