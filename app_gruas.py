@@ -5,33 +5,65 @@ import os
 # 1. CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="OKGRUAS RS - Solicitud", page_icon="🚛", layout="centered")
 
-# 2. ESTILO VISUAL (Verde Neón y Tipografía Montserrat)
+# 2. ESTILO VISUAL FORZADO (Negro Absoluto y Verde Neón)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
     
-    html, body, [class*="css"] {
+    /* 1. FORZAR FONDO NEGRO EN TODA LA PÁGINA */
+    .stApp {
+        background-color: #000000 !important;
+    }
+
+    /* 2. FORZAR COLOR DE TEXTO GENERAL */
+    html, body, [class*="css"], .stMarkdown {
         font-family: 'Montserrat', sans-serif;
-        background-color: #121212;
-        color: white;
+        color: #FFFFFF !important;
     }
-    .stButton>button { 
-        background-color: #00FF00; 
-        color: black; 
-        border-radius: 10px; 
-        width: 100%;
-        font-weight: bold;
-        height: 3em;
-    }
+
+    /* 3. CAJAS DE TEXTO (Inputs) */
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
-        background-color: #262626 !important; color: white !important; border: 1px solid #00FF00 !important; 
+        background-color: #1A1A1A !important; 
+        color: #00FF00 !important; 
+        border: 1px solid #00FF00 !important; 
     }
-    label { color: #00FF00 !important; font-weight: bold; }
-    h1, h2, h3 { color: #00FF00 !important; }
+
+    /* 4. ETIQUETAS (Nombres de los campos) */
+    label { 
+        color: #00FF00 !important; 
+        font-weight: bold !important; 
+        font-size: 1.1rem !important;
+    }
+
+    /* 5. TÍTULOS EN VERDE NEÓN */
+    h1, h2, h3, h4, h5, h6 { 
+        color: #00FF00 !important; 
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.3); /* Efecto neón suave */
+    }
+
+    /* 6. BOTÓN PRINCIPAL */
+    .stButton>button { 
+        background-color: #00FF00 !important; 
+        color: #000000 !important; 
+        border-radius: 10px; 
+        font-weight: bold;
+        border: none;
+        transition: 0.3s;
+    }
+    
+    .stButton>button:hover {
+        box-shadow: 0 0 20px #00FF00;
+        color: #000000 !important;
+    }
+
+    /* Forzar que los divisores también sean verdes */
+    hr {
+        border-top: 1px solid #00FF00 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. CABECERA (LOGO PEQUEÑO + NOMBRE OKGRUAS RS)
+# 3. CABECERA
 col_head1, col_head2 = st.columns([1, 4])
 
 with col_head1:
@@ -69,14 +101,13 @@ with st.form("solicitud_servicio"):
     
     notas = st.text_area("Notas adicionales (ej. si está en un sótano, no tiene llaves, etc.)")
     
-    st.info("💡 Al enviar la solicitud, un asesor se pondrá en contacto contigo vía WhatsApp para darte el costo exacto y tiempo de llegada.")
+    st.markdown("<p style='color: #00FF00; font-size: 0.9rem;'>💡 Al enviar, un asesor te contactará por WhatsApp.</p>", unsafe_allow_html=True)
     
     btn_enviar = st.form_submit_button("📩 SOLICITAR COTIZACIÓN POR WHATSAPP")
 
 # 5. LÓGICA DE ENVÍO
 if btn_enviar:
     if nombre and modelo and origen and destino:
-        # Texto del mensaje sin precio, pidiendo cotización
         texto = (
             f"*NUEVA SOLICITUD DE SERVICIO - OKGRUAS RS*\n\n"
             f"👤 *Cliente:* {nombre}\n"
@@ -88,17 +119,17 @@ if btn_enviar:
             f"🧐 *Solicito cotización y tiempo de llegada.*"
         )
         mensaje_url = urllib.parse.quote(texto)
-        mi_numero = "528143029578" # Tu número actualizado
+        mi_numero = "528143029578"
         whatsapp_link = f"https://wa.me/{mi_numero}?text={mensaje_url}"
         
         st.markdown(f'''
-            <a href="{whatsapp_link}" target="_blank">
-                <button style="background-color: #25D366; color: white; padding: 15px; border: none; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px;">
+            <a href="{whatsapp_link}" target="_blank" style="text-decoration: none;">
+                <div style="background-color: #25D366; color: white; padding: 15px; border-radius: 10px; width: 100%; text-align: center; font-weight: bold; font-size: 16px; cursor: pointer;">
                     ✅ CLICK AQUÍ PARA CONFIRMAR EN WHATSAPP
-                </button>
+                </div>
             </a>
         ''', unsafe_allow_html=True)
     else:
-        st.error("⚠️ Por favor, llena los campos obligatorios (Nombre, Vehículo, Origen y Destino).")
+        st.error("⚠️ Por favor, llena los campos obligatorios.")
 
 st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026</p>", unsafe_allow_html=True)
