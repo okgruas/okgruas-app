@@ -1,5 +1,6 @@
 import streamlit as st
 import urllib.parse
+from streamlit_js_eval import streamlit_js_eval # Necesitarás instalar: pip install streamlit-js-eval
 
 # 1. CONFIGURACIÓN
 st.set_page_config(page_title="OKGRUAS RS - Auxilio Vial", page_icon="🚨", layout="centered")
@@ -24,7 +25,6 @@ st.markdown("""
         border-radius: 12px; font-weight: bold; width: 100%; height: 3.5em;
     }
     
-    /* BOTÓN DE LLAMADA AL FINAL (DISCRETO) */
     .call-footer {
         display: block;
         background-color: #1A1A1A;
@@ -41,6 +41,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# --- OBTENCIÓN DE UBICACIÓN REAL (GPS) ---
+# Esto detecta las coordenadas del celular del cliente
+location = streamlit_js_eval(data_key='pos', func_name='getCurrentPosition', want_output=True)
+lat_long_str = ""
+if location:
+    lat = location['coords']['latitude']
+    lon = location['coords']['longitude']
+    lat_long_str = f"https://www.google.com/maps?q={lat},{lon}"
+
 # 3. CABECERA
 col_logo1, col_logo2 = st.columns([1, 2])
 with col_logo1:
@@ -55,9 +64,9 @@ with col_logo2:
 
 st.divider()
 
-# 4. FORMULARIO DE DATOS
+# 4. FORMULARIO
 st.markdown("### 📋 Reporte de Asistencia")
-with st.form("form_rs_v3"):
+with st.form("form_rs_v4"):
     nombre = st.text_input("Nombre del Cliente")
     
     col1, col2 = st.columns(2)
@@ -70,23 +79,21 @@ with st.form("form_rs_v3"):
 
     st.divider()
     
-    punto_recoleccion = st.text_input("📍 Punto de Recolección (Calle/Cruce/Colonia)")
-    st.markdown("<p style='color: #888; font-size: 0.8rem; margin-top: -15px;'>(Si no conoce la dirección exacta, el GPS se enviará al confirmar abajo)</p>", unsafe_allow_html=True)
-    
+    punto_recoleccion = st.text_input("📍 Punto de Recolección (Manual)")
     punto_destino = st.text_input("🏁 Punto Destino")
     
-    # OPCIÓN DE GAS AGREGADA
     falla = st.selectbox("Problema o Falla", ["Falla Mecánica", "Choque", "Llanta Ponchada", "Batería / Paso de Corriente", "Falta de Gasolina", "Bloqueado / Llaves dentro"])
     
     notas = st.text_area("Notas adicionales")
     
-    st.markdown("<p style='color: #00FF00; font-weight: bold; text-align: center;'>Al dar click se abrirá WhatsApp con su ubicación GPS</p>", unsafe_allow_html=True)
-    submit_rs = st.form_submit_button("🚀 ENVIAR DATOS Y UBICACIÓN GPS")
+    st.info("💡 Al confirmar, se incluirán tus coordenadas GPS reales en el mensaje.")
+    submit_rs = st.form_submit_button("🚀 GENERAR REPORTE CON GPS")
 
 # 5. LÓGICA DE WHATSAPP
 if submit_rs:
     if nombre:
-        gps_link = "https://www.google.com/maps/search/?api=1&query=mi+ubicacion"
+        # Si detectó el GPS usamos las coordenadas reales, si no, el link genérico
+        final_gps = lat_long_str if lat_long_str else "El cliente no activó su GPS manual"
         
         msg = (
             f"*🚨 SOLICITUD DE ASISTENCIA - OKGRUAS RS*\n"
@@ -95,14 +102,13 @@ if submit_rs:
             f"🚗 *Auto:* {vehiculo} {año_auto} ({color})\n"
             f"🔢 *Placas:* {placas}\n"
             f"--------------------------------\n"
-            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Confirmar con GPS'}\n"
+            f"📍 *Origen Manual:* {punto_recoleccion}\n"
             f"🏁 *Destino:* {punto_destino}\n"
             f"🚨 *Situación:* {falla}\n"
             f"📝 *Notas:* {notas}\n"
             f"--------------------------------\n"
-            f"📍 *UBICACIÓN GPS:* {gps_link}\n"
+            f"📍 *UBICACIÓN GPS REAL:* \n{final_gps}\n"
             f"--------------------------------\n"
-            f"🧐 *Asesor: Proceder con cotización inmediata.*"
         )
         
         link_ws = f"https://wa.me/528143029578?text={urllib.parse.quote(msg)}"
@@ -110,22 +116,18 @@ if submit_rs:
         st.markdown(f'''
             <a href="{link_ws}" target="_blank" style="text-decoration: none;">
                 <div style="background-color: #00FF00; color: black; padding: 20px; border-radius: 12px; text-align: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 0 15px rgba(0,255,0,0.5);">
-                    ✅ CONFIRMAR ENVÍO POR WHATSAPP
+                    ✅ ENVIAR POR WHATSAPP AHORA
                 </div>
             </a>
         ''', unsafe_allow_html=True)
     else:
-        st.error("⚠️ Por favor, ingresa tu nombre.")
+        st.error("⚠️ Ingresa tu nombre para continuar.")
 
-# --- 6. BOTÓN DE LLAMADA AL FINAL (TU PETICIÓN) ---
-st.markdown('<a href="tel:8143029578" class="call-footer">📞 ¿No puedes escribir? Llamar a Central de Grúas</a>', unsafe_allow_html=True)
+# 6. LLAMADA AL FINAL
+st.markdown('<a href="tel:8143029578" class="call-footer">📞 ¿No puedes escribir? Llamar a Central</a>', unsafe_allow_html=True)
 
 # 7. PANEL ADMIN
-st.write("<br><br>", unsafe_allow_html=True)
-with st.expander("🔐 Panel Administrativo"):
+with st.expander("🔐"):
     clave = st.text_input("Clave", type="password")
     if clave == "RS1020":
-        monto = st.number_input("Costo del servicio ($)", value=800)
-        st.metric("Comisión (10%)", f"${monto * 0.10:,.2f}")
-
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
+        st.write("Acceso Admin OK")
