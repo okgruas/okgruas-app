@@ -56,21 +56,25 @@ if location:
     lon = location['coords']['longitude']
     lat_long_str = f"https://www.google.com/maps?q={lat},{lon}"
 
-# 3. CABECERA
+# 3. CABECERA CON LOGO TRASLÚCIDO
 col_logo1, col_logo2 = st.columns([1, 2])
+
 with col_logo1:
     try:
-        st.image("logo.png", width=120) 
+        # Usamos un contenedor de HTML para aplicar la transparencia (opacity)
+        st.markdown(
+            """
+            <div style="opacity: 0.5;"> <img src="https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/logo.png" width="120">
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     except:
-        st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='margin:0; opacity: 0.5;'>🚛</h1>", unsafe_allow_html=True)
 
 with col_logo2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana y Otros Municipios</p>", unsafe_allow_html=True)
-
-st.divider()
-
-# --- RECOMENDACIONES DE SEGURIDAD ---
+    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana</p>", unsafe_allow_html=True)# --- RECOMENDACIONES DE SEGURIDAD ---
 with st.expander("🛡️ RECOMENDACIONES DE SEGURIDAD (Leer importante)"):
     st.markdown("""
     * **Mantén la calma:** Ya estamos en camino.
