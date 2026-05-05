@@ -103,7 +103,7 @@ with st.form("form_rs_final"):
     st.divider()
     
     punto_recoleccion = st.text_input("📍 Punto de Recolección (Manual)")
-    st.markdown("<p style='color: #888; font-size: 0.8rem; margin-top: -15px;'>(Si desconoce la ubicación, el GPS real se enviará al confirmar)</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.8rem; margin-top: -15px;'>(Si desconoce la ubicación, se le brindara ayuda)</p>", unsafe_allow_html=True)
     
     punto_destino = st.text_input("🏁 Punto Destino")
     
@@ -117,9 +117,9 @@ with st.form("form_rs_final"):
         falla_tipo = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Falta de Gasolina", "Bloqueado"])
 
     notas_serv = st.text_area("Notas adicionales")
-    st.markdown("<p style='color: #00FF00; font-weight: bold; text-align: center;'>⚠️ Al confirmar, se abrirá WhatsApp con tus datos y GPS.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #00FF00; font-weight: bold; text-align: center;'>⚠️ Al confirmar, se abrirá WhatsApp con tus datos y un asesor confirmara costo total del servicio.</p>", unsafe_allow_html=True)
     
-    submit_rs = st.form_submit_button("🚀 ENVIAR SOLICITUD Y GPS")
+    submit_rs = st.form_submit_button("🚀 ENVIAR SOLICITUD PARA COTIZACION")
 
 # 5. LÓGICA WHATSAPP
 if submit_rs:
