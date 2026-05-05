@@ -74,15 +74,7 @@ with col_logo1:
 
 with col_logo2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana</p>", unsafe_allow_html=True)# --- RECOMENDACIONES DE SEGURIDAD ---
-with st.expander("🛡️ RECOMENDACIONES DE SEGURIDAD (Leer importante)"):
-    st.markdown("""
-    * **Mantén la calma:** Ya estamos en camino.
-    * **Encienda luces intermitentes:** Hazte visible para otros conductores.
-    * **Baje del vehículo:** Si es seguro, resguárdate fuera del arroyo vehicular.
-    * **No acepte ayuda de extraños:** Espere a la unidad oficial identificada.
-    """)
-
+    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana</p>", unsafe_allow_html=True)
 # --- TARIFAS ---
 st.markdown("### 💰 Tarifas Base")
 c_tar1, c_tar2 = st.columns(2)
