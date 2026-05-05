@@ -4,7 +4,7 @@ import urllib.parse
 # 1. CONFIGURACIÓN
 st.set_page_config(page_title="OKGRUAS RS - Auxilio Vial", page_icon="🚨", layout="centered")
 
-# 2. ESTILO VISUAL "NEÓN RS" + BOTONES ESPECIALES
+# 2. ESTILO VISUAL "NEÓN RS"
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
@@ -19,7 +19,7 @@ st.markdown("""
     label { color: #00FF00 !important; font-weight: bold !important; }
     h1, h2, h3 { color: #00FF00 !important; text-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
     
-    /* Botón de Pánico Rojo Vibrante */
+    /* BOTÓN DE PÁNICO (LLAMADA) */
     .panic-button {
         display: block;
         background-color: #FF0000;
@@ -35,7 +35,7 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
     }
     
-    /* Botón de Llamada */
+    /* CONTACTO DIRECTO */
     .call-button {
         display: block;
         background-color: #1A1A1A;
@@ -63,85 +63,63 @@ with col_logo2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color: #888;'>Servicio en Monterrey y Área Metropolitana</p>", unsafe_allow_html=True)
 
-# --- SECCIÓN DE EMERGENCIA ---
+# --- OPCIÓN 1: LLAMADA DIRECTA (ARRIBA) ---
 st.markdown('<a href="tel:8143029578" class="panic-button">🚨 BOTÓN DE PÁNICO: LLAMAR AHORA</a>', unsafe_allow_html=True)
 st.markdown('<a href="tel:8143029578" class="call-button">📞 CONTACTO DIRECTO A GRUEROS</a>', unsafe_allow_html=True)
 
 st.divider()
 
-# 4. FORMULARIO TÉCNICO
-st.markdown("### 📋 Datos del Servicio")
-with st.form("form_rs_final"):
+# 4. FORMULARIO DE DATOS
+st.markdown("### 📋 Datos del Vehículo")
+with st.form("form_rs_full"):
     nombre = st.text_input("Nombre del Cliente")
     
-    col_v1, col_v2 = st.columns(2)
-    with col_v1:
+    col1, col2 = st.columns(2)
+    with col1:
         vehiculo = st.text_input("Marca y Modelo")
         año_auto = st.text_input("Año")
-    with col_v2:
+    with col2:
         color = st.text_input("Color")
-        placas_auto = st.text_input("Placas")
+        placas = st.text_input("Placas")
 
     st.divider()
     
-    punto_recoleccion = st.text_input("📍 Punto de Recolección (Calle/Colonia/Cruce)")
-    st.markdown("<p style='color: #888; font-size: 0.8rem; margin-top: -15px;'>(Si desconoce la ubicación, se enviará su GPS automático al confirmar)</p>", unsafe_allow_html=True)
-    
+    punto_recoleccion = st.text_input("📍 Punto de Recolección")
     punto_destino = st.text_input("🏁 Punto Destino")
     
-    st.divider()
+    falla = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Bloqueado"])
+    notas = st.text_area("Notas adicionales")
     
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        falla_tipo = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Bloqueado"])
-    with col_f2:
-        zona_serv = st.selectbox("Zona Sugerida", ["Local (Mty)", "Foráneo"])
+    submit_rs = st.form_submit_button("🚀 GENERAR REPORTE")
 
-    notas_serv = st.text_area("Notas adicionales")
-    
-    submit_rs = st.form_submit_button("🚀 SOLICITAR GRÚA Y ENVIAR UBICACIÓN")
-
-# 5. LÓGICA DE WHATSAPP + UBICACIÓN GPS
+# 5. OPCIÓN 2: WHATSAPP CON UBICACIÓN EN TIEMPO REAL (ABAJO)
 if submit_rs:
     if nombre:
-        # Link de ubicación GPS para que te llegue al hacer click
-        gps_link = "https://www.google.com/maps/search/?api=1&query=Mi+Ubicacion"
+        # Link de ubicación GPS para WhatsApp
+        gps_link = "http://maps.google.com/maps?q=loc:0,0" # Enlace base para que el chat detecte ubicación
         
         msg = (
-            f"*🚨 SOLICITUD DE AUXILIO VIAL - OKGRUAS RS*\n"
+            f"*🚨 SOLICITUD DE AUXILIO - OKGRUAS RS*\n"
             f"--------------------------------\n"
             f"👤 *Cliente:* {nombre}\n"
             f"🚗 *Auto:* {vehiculo} {año_auto} ({color})\n"
-            f"🔢 *Placas:* {placas_auto}\n"
+            f"🔢 *Placas:* {placas}\n"
             f"--------------------------------\n"
-            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Ver GPS abajo'}\n"
+            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Ver GPS en mensaje'}\n"
             f"🏁 *Destino:* {punto_destino}\n"
-            f"🚨 *Falla:* {falla_tipo}\n"
-            f"📝 *Notas:* {notas_serv}\n"
+            f"🚨 *Falla:* {falla}\n"
+            f"📝 *Notas:* {notas}\n"
             f"--------------------------------\n"
-            f"📍 *UBICACIÓN GPS:* {gps_link}\n"
-            f"--------------------------------\n"
-            f"🧐 *Favor de contactar para confirmar costo.*"
+            f"📍 *ENVÍO UBICACIÓN EN TIEMPO REAL ABAJO:* \n"
         )
         
         link_ws = f"https://wa.me/528143029578?text={urllib.parse.quote(msg)}"
+        
         st.markdown(f'''
             <a href="{link_ws}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: #00FF00; color: black; padding: 20px; border-radius: 12px; text-align: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 0 15px rgba(0,255,0,0.4);">
-                    ✅ CONFIRMAR Y ENVIAR POR WHATSAPP
+                <div style="background-color: #00FF00; color: black; padding: 25px; border-radius: 15px; text-align: center; font-weight: bold; font-size: 1.3rem; box-shadow: 0 0 20px rgba(0,255,0,0.6);">
+                    ✅ ENVIAR DATOS Y UBICACIÓN GPS
                 </div>
             </a>
+            <p style='text-align: center; color: #00FF00; font-size: 0.8rem; margin-top: 10px;'>Al hacer clic, se abrirá WhatsApp con tu reporte listo para enviar.</p>
         ''', unsafe_allow_html=True)
-    else:
-        st.error("⚠️ El nombre es necesario para procesar tu auxilio.")
-
-# 6. PANEL ADMIN
-st.write("<br><br>", unsafe_allow_html=True)
-with st.expander("🔐 Acceso Administrativo"):
-    clave_admin = st.text_input("Introduce Clave", type="password")
-    if clave_admin == "RS1020":
-        st.success("Acceso Confirmado")
-        monto_serv = st.number_input("Costo pactado ($)", value=800)
-        st.metric("Comisión OKGRUAS (10%)", f"${monto_serv * 0.10:,.2f}")
-
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
