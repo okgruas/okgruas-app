@@ -2,3 +2,4 @@ streamlit
 Pillow
 st-gsheets-connection
 streamlit-js-eval
+segno
