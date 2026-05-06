@@ -8,7 +8,6 @@ import os
 st.set_page_config(page_title="OKGRUAS RS - Sistema Monterrey", page_icon="🚛", layout="wide")
 
 # 2. SISTEMA DE EXCEL (FORMATO NATIVO .XLSX)
-# Cambiamos a .xlsx para evitar la advertencia de "pérdida de datos"
 ARCHIVO_REGISTRO = "servicios_okgruas_rs.xlsx"
 COLUMNAS = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
 
@@ -16,16 +15,13 @@ def gestionar_datos_excel(datos_nuevos=None):
     if not os.path.exists(ARCHIVO_REGISTRO):
         pd.DataFrame(columns=COLUMNAS).to_excel(ARCHIVO_REGISTRO, index=False)
     
-    # Leemos el archivo actual
     df_actual = pd.read_excel(ARCHIVO_REGISTRO)
     
     if datos_nuevos:
         id_folio = f"RS2014-{len(df_actual) + 1}"
         datos_nuevos["Folio"] = id_folio
-        # Agregamos el nuevo servicio
-        registro_df = pd.DataFrame([datos_nuevos])[COLUMNAS]
-        df_final = pd.concat([df_actual, registro_df], ignore_index=True)
-        # Guardar como Excel nativo
+        nuevo_registro = pd.DataFrame([datos_nuevos])[COLUMNAS]
+        df_final = pd.concat([df_actual, nuevo_registro], ignore_index=True)
         df_final.to_excel(ARCHIVO_REGISTRO, index=False)
         return id_folio
     
@@ -56,15 +52,14 @@ with col_form:
     en_sotano = st.checkbox("🔦 ¿Es Sótano?")
     num_pisos = st.number_input("Pisos:", min_value=0, step=1) if en_sotano else 0
 
-# CÁLCULOS (Arregla el error de NameError)
+# CÁLCULOS (Aquí corregimos el error de TOTAL_TOTAL que te salía)
 EXTRAS_CALC = (350.0 * sum([llantas_t, no_neutral, m_especial])) + (num_pisos * 350.0)
-TOTAL_CALCULADO = 800.0 + (dist_km * 25.0) + EXTRAS_CALC
+TOTAL_FINAL = 800.0 + (dist_km * 25.0) + EXTRAS_CALC
 
 with col_resumen:
     st.markdown("### 📋 RESUMEN")
-    # Mostramos el total con el nombre correcto de variable
-    st.metric("TOTAL A COBRAR", f"${TOTAL_CALCULADO:,.2f}")
-    st.caption(f"Siguiente Folio a Generar: {gestionar_datos_excel()}")
+    st.metric("TOTAL A COBRAR", f"${TOTAL_FINAL:,.2f}")
+    st.caption(f"Siguiente Folio: {gestionar_datos_excel()}")
 
 # 4. BOTÓN DE GUARDADO
 st.divider()
@@ -72,29 +67,25 @@ if len(tel_cliente) >= 10:
     if st.button("🚀 GUARDAR Y ENVIAR WHATSAPP", use_container_width=True):
         nuevo_servicio = {
             "Folio": "", "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "Cliente": nom_cliente if nom_cliente else "Cliente General",
+            "Cliente": nom_cliente if nom_cliente else "Gral",
             "WhatsApp": tel_cliente, "Falla": tipo_incidente, "KM": dist_km,
-            "Maniobras": EXTRAS_CALC, "Total": TOTAL_CALCULADO
+            "Maniobras": EXTRAS_CALC, "Total": TOTAL_FINAL
         }
-        folio_generado = gestionar_datos_excel(nuevo_servicio)
+        folio_gen = gestionar_datos_excel(nuevo_servicio)
         
-        # Formateamos el mensaje de WhatsApp sin códigos raros
-        mensaje_wa = (f"*OKGRUAS RS*\n🆔 *Folio: {folio_generado}*\n👤 Cliente: {nuevo_servicio['Cliente']}\n🛠️ Falla: {tipo_incidente}\n💰 *TOTAL: ${TOTAL_CALCULADO:,.2f}*")
+        mensaje_wa = (f"*OKGRUAS RS*\n🆔 Folio: {folio_gen}\n💰 *TOTAL: ${TOTAL_FINAL:,.2f}*")
         url_final = f"https://wa.me/52{tel_cliente[-10:]}?text={urllib.parse.quote(mensaje_wa)}"
         
-        st.success(f"✅ ¡Servicio {folio_generado} registrado con éxito!")
+        st.success(f"✅ ¡Folio {folio_gen} guardado!")
         st.link_button("📲 ENVIAR POR WHATSAPP", url_final, type="primary", use_container_width=True)
 else:
-    st.info("💡 Por favor, ingresa el WhatsApp del cliente para habilitar el registro.")
+    st.info("💡 Ingresa el WhatsApp del cliente.")
 
 # 5. ADMINISTRACIÓN (10% COMISIÓN)
-with st.expander("📊 RENDIMIENTO PRIVADO"):
-    clave_adm = st.text_input("Clave Admin", type="password")
-    if clave_adm == "RS2014": # Corregimos el SyntaxError aquí
+with st.expander("📊 PANEL PRIVADO"):
+    if st.text_input("Clave Admin", type="password") == "RS2014":
         if os.path.exists(ARCHIVO_REGISTRO):
-            df_admin = pd.read_excel(ARCHIVO_REGISTRO)
-            st.dataframe(df_admin, use_container_width=True)
-            
-            # Cálculo de tu ganancia al 10%
-            mi_ganancia = df_admin["Total"].sum() * 0.10
-            st.metric("TU GANANCIA (10%)", f"${mi_ganancia:,.2f}")
+            df_adm = pd.read_excel(ARCHIVO_REGISTRO)
+            st.dataframe(df_adm)
+            ganancia = df_adm["Total"].sum() * 0.10
+            st.metric("TU GANANCIA (10%)", f"${ganancia:,.2f}")
