@@ -21,14 +21,12 @@ ARCHIVO_EXCEL = "registro_asistencias_rs.csv"
 COLUMNAS = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
 
 def inicializar_y_guardar(datos=None):
-    # Si no existe, crea el archivo con el separador correcto para Excel
     if not os.path.exists(ARCHIVO_EXCEL):
         pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_EXCEL, index=False, sep=';')
     
     try:
         df = pd.read_csv(ARCHIVO_EXCEL, sep=';')
     except:
-        # En caso de error, reinicia el archivo limpio
         pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_EXCEL, index=False, sep=';')
         df = pd.read_csv(ARCHIVO_EXCEL, sep=';')
     
@@ -36,7 +34,6 @@ def inicializar_y_guardar(datos=None):
         siguiente_folio = f"RS2014-{len(df) + 1}"
         datos["Folio"] = siguiente_folio
         nuevo_registro = pd.DataFrame([datos])[COLUMNAS]
-        # Guardar con sep=';' para que Excel lo abra con columnas separadas
         nuevo_registro.to_csv(ARCHIVO_EXCEL, mode='a', header=False, index=False, sep=';')
         return siguiente_folio
     
@@ -92,10 +89,10 @@ with col_calculos:
     st.metric("TOTAL NETO", f"${TOTAL_A_COBRAR:,.2f}")
     st.caption(f"Siguiente Folio a Generar: {inicializar_y_guardar()}")
 
-# 5. REGISTRO Y WHATSAPP
+# 5. REGISTRO Y WHATSAPP (HABILITADO)
 st.divider()
 if len(cliente_tel) >= 10:
-    if st.button("🚀 REGISTRAR Y GENERAR WHATSAPP", use_container_width=True):
+    if st.button("🚀 REGISTRAR SERVICIO", use_container_width=True):
         datos_registro = {
             "Folio": "", 
             "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -108,13 +105,23 @@ if len(cliente_tel) >= 10:
         }
         
         folio_real = inicializar_y_guardar(datos_registro)
-        
-        # MENSAJE LIMPIO
-        mensaje = (f"*OKGRUAS RS*\n🆔 *Folio: {folio_real}*\n👤 Cliente: {datos_registro['Cliente']}\n🛠️ Falla: {tipo_falla}\n💰 *TOTAL: ${TOTAL_A_COBRAR:,.2f}*\n------------------\n_Servicio Monterrey_")
-        url_wa = f"https://wa.me/52{cliente_tel[-10:]}?text={urllib.parse.quote(mensaje)}"
-        
+        st.session_state['ultimo_folio'] = folio_real
+        st.session_state['datos_envio'] = datos_registro
         st.success(f"✅ ¡Servicio {folio_real} guardado en el Excel!")
-        st.link_button("📲 ENVIAR POR WHATSAPP", url_wa, type="primary", use_container_width=True)
+
+    # Botón de WhatsApp se activa solo después de registrar
+    if 'ultimo_folio' in st.session_state:
+        d = st.session_state['datos_envio']
+        mensaje = (f"*OKGRUAS RS - COTIZACIÓN*\n"
+                   f"🆔 *Folio: {d['Folio']}*\n"
+                   f"👤 Cliente: {d['Cliente']}\n"
+                   f"🛠️ Falla: {d['Falla']}\n"
+                   f"💰 *TOTAL A PAGAR: ${d['Total']:,.2f}*\n"
+                   f"------------------\n"
+                   f"_Servicio Monterrey, N.L._")
+        
+        url_wa = f"https://wa.me/52{cliente_tel[-10:]}?text={urllib.parse.quote(mensaje)}"
+        st.link_button("📲 ENVIAR COTIZACIÓN POR WHATSAPP", url_wa, type="primary", use_container_width=True)
 else:
     st.info("💡 Ingresa el número del cliente para registrar.")
 
@@ -125,7 +132,6 @@ with st.expander("📊 PANEL ADMINISTRADOR"):
             df_final = pd.read_csv(ARCHIVO_EXCEL, sep=';')
             st.dataframe(df_final, use_container_width=True)
             
-            # COMISIÓN AL 10%
             mi_comision = df_final["Total"].sum() * 0.10
             st.metric("TU GANANCIA (10%)", f"${mi_comision:,.2f}")
             
