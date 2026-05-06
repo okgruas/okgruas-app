@@ -1,11 +1,107 @@
-# Reemplaza la sección 6 (ENVÍO WHATSAPP) con este código "Auditor":
+import streamlit as st
+import urllib.parse
+from datetime import datetime
+import os
 
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="OKGRUAS RS Control", page_icon="🚛", layout="wide")
+
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+    html, body, [class*="css"] {
+        font-family: 'Montserrat', sans-serif;
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+    .stMetric {
+        background-color: #1e1e1e;
+        border: 1px solid #00FF00;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    .price-tag {
+        background-color: #262626;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 3px solid #00FF00;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 2. CANDADO INICIAL
+if 'auth' not in st.session_state:
+    st.session_state['auth'] = False
+
+if not st.session_state['auth']:
+    st.markdown("<h1 style='color: #00FF00; text-align: center;'>🔐 ACCESO RESTRINGIDO</h1>", unsafe_allow_html=True)
+    col_lock1, col_lock2, col_lock3 = st.columns([1,2,1])
+    with col_lock2:
+        clave_maestra = st.text_input("Introduce Clave de Acceso", type="password")
+        if st.button("INGRESAR"):
+            if clave_maestra == "RS2026":
+                st.session_state['auth'] = True
+                st.rerun()
+            else:
+                st.error("Clave incorrecta")
+    st.stop()
+
+# 3. CABECERA
+st.markdown("<h1 style='color: #00FF00; margin-bottom: 0;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+st.markdown("<p style='color: #888; margin-top: 0;'>Panel de Auditoría y Control</p>", unsafe_allow_html=True)
+st.divider()
+
+# 4. ENTRADA DE DATOS
+col_in, col_res = st.columns([3, 2])
+
+with col_in:
+    st.markdown("<h3 style='color: #00FF00;'>📍 DATOS DEL SERVICIO</h3>", unsafe_allow_html=True)
+    c_nom, c_tel = st.columns(2)
+    with c_nom: cliente_nombre = st.text_input("Nombre del Cliente:")
+    with c_tel: cliente_whatsapp = st.text_input("WhatsApp del Cliente (10 dígitos):")
+    
+    col_km1, col_km2 = st.columns(2)
+    with col_km1: km = st.number_input("Kilómetros Recorridos:", min_value=0.0, value=0.0, step=1.0)
+    with col_km2: costo_km_extra = st.number_input("Costo por KM Extra ($):", min_value=0.0, value=25.0)
+    
+    tipo_falla = st.selectbox("Tipo de Falla:", ["Falla Mecánica", "Choque / Siniestro", "Llanta Ponchada", "Sin Batería", "Auto Bloqueado", "Maniobra Especial"])
+
+    st.markdown("---")
+    st.markdown("**🔧 Maniobras Extras ($350 c/u)**")
+    c_m1, c_m2, c_m3 = st.columns(3)
+    with c_m1: m_volante = st.checkbox("Volante/Llantas trabadas")
+    with c_m2: m_neutral = st.checkbox("No entra Neutral")
+    with c_m3: m_especial = st.checkbox("Maniobra Especial")
+
+    st.markdown("---")
+    col_s1, col_s2 = st.columns([1, 2])
+    with col_s1: sotano = st.checkbox("🔦 ¿Es Sótano?")
+    with col_s2: pisos = st.number_input("¿Cuántos niveles?", min_value=0, step=1) if sotano else 0
+
+# LÓGICA DE CÁLCULOS
+BANDERAZO = 800.0
+COSTO_RECORRIDO = km * costo_km_extra
+COSTO_MANIOBRAS = (350.0 if m_volante else 0) + (350.0 if m_neutral else 0) + (350.0 if m_especial else 0)
+COSTO_SOTANO = pisos * 350.0
+total_final = BANDERAZO + COSTO_RECORRIDO + COSTO_MANIOBRAS + COSTO_SOTANO
+
+# 5. RESULTADOS
+with col_res:
+    st.markdown("<h3 style='color: #00FF00;'>📋 DESGLOSE NETO</h3>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🏁 Banderazo: <b>$800.00</b></div>", unsafe_allow_html=True)
+    if km > 0: st.markdown(f"<div class='price-tag'>🛣️ Recorrido: <b>${COSTO_RECORRIDO:,.2f}</b></div>", unsafe_allow_html=True)
+    if (COSTO_MANIOBRAS + COSTO_SOTANO) > 0: st.markdown(f"<div class='price-tag'>🔧 Maniobras/Sótano: <b>${(COSTO_MANIOBRAS + COSTO_SOTANO):,.2f}</b></div>", unsafe_allow_html=True)
+    st.divider()
+    st.metric("TOTAL A COBRAR", f"${total_final:,.2f}")
+
+# 6. BOTÓN ÚNICO DE AUDITORÍA (MANDA A AMBOS)
 st.divider()
 fecha_txt = datetime.now().strftime("%d/%m/%Y")
-mi_numero = "528143029578"
+mi_numero = "528143029578" # Tu número de Monterrey
 
-# 1. Preparamos el texto que verán ambos
-texto_base = (f"*OKGRUAS RS - COTIZACIÓN OFICIAL*\n"
+texto_cotizacion = (f"*OKGRUAS RS - COTIZACIÓN OFICIAL*\n"
             f"📅 Fecha: {fecha_txt}\n"
             f"👤 Cliente: {cliente_nombre if cliente_nombre else 'General'}\n"
             f"🛠️ Falla: {tipo_falla}\n"
@@ -16,31 +112,40 @@ texto_base = (f"*OKGRUAS RS - COTIZACIÓN OFICIAL*\n"
             f"--------------------------\n"
             f"💰 *TOTAL: ${total_final:,.2f}*\n"
             f"--------------------------\n"
-            f"🆔 Folio: {datetime.now().strftime('%H%M%S')}") # Esto te sirve para rastrear
+            f"🆔 Folio: {datetime.now().strftime('%H%M%S')}")
 
-# 2. LÓGICA DE ENVÍO "UN SOLO BOTÓN"
 clean_phone = "".join(filter(str.isdigit, cliente_whatsapp))
 
 if len(clean_phone) >= 10:
-    num_final = "52" + clean_phone if len(clean_phone) == 10 else clean_phone
+    num_cliente = "52" + clean_phone if len(clean_phone) == 10 else clean_phone
     
-    # TRUCO: El enlace de "Enviar a" sin número específico abre la lista de contactos, 
-    # pero nosotros queremos forzar el envío. 
-    # Como WhatsApp no deja abrir dos chats, usaremos el link del cliente
-    # pero agregaremos una instrucción visual.
-    
-    link_c = f"https://wa.me/{num_final}?text={urllib.parse.quote(texto_base)}"
+    # Este link envía al cliente con tu número en el texto para que él sepa quién eres
+    link_final = f"https://wa.me/{num_cliente}?text={urllib.parse.quote(texto_cotizacion + f'\\n\\nReportar a: {mi_numero}')}"
     
     st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #00FF00; text-align: center;">
-            <p style="color: #00FF00; font-weight: bold;">⚠️ REGISTRO DE SERVICIO ACTIVO</p>
-            <a href="{link_c}" target="_blank">
-                <button style="width:100%; background-color:#25d366; color:white; border:none; padding:20px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:20px;">
-                    🚀 ENVIAR COTIZACIÓN Y REGISTRAR
+        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; border: 2px solid #00FF00; text-align: center;">
+            <p style="color: #00FF00; font-size: 18px; font-weight: bold; margin-bottom: 15px;">🚀 SISTEMA DE REGISTRO ACTIVO</p>
+            <a href="{link_final}" target="_blank">
+                <button style="width:100%; background-color:#25d366; color:white; border:none; padding:20px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,0,0.3);">
+                    ENVIAR COTIZACIÓN Y REGISTRAR SERVICIO
                 </button>
             </a>
-            <p style="color: #888; font-size: 12px; margin-top: 10px;">Al dar clic, se genera un folio automático para tu reporte mensual.</p>
+            <p style="color: #888; font-size: 12px; margin-top: 15px;">Dile al socio: "Si no envías la cotización desde este botón, el servicio no cuenta para pago".</p>
         </div>
     """, unsafe_allow_html=True)
 else:
-    st.warning("Escribe el WhatsApp del cliente para habilitar el botón de envío.")
+    st.markdown(f'<button style="width:100%; background-color:#444; color:#888; border:none; padding:20px; border-radius:10px; font-weight:bold; cursor:not-allowed;">⚠️ FALTA NÚMERO DEL CLIENTE PARA REGISTRAR</button>', unsafe_allow_html=True)
+
+# 7. ADMINISTRACIÓN
+utilidad_yaja = total_final * 0.15
+pago_socio = total_final - utilidad_yaja
+with st.expander("📊 Rendimiento Privado"):
+    clave_admin = st.text_input("Clave Admin", type="password")
+    if clave_admin == "RS2014":
+        c1, c2 = st.columns(2)
+        with c1: st.metric("TU GANANCIA (15%)", f"${utilidad_yaja:,.2f}")
+        with c2: st.metric("PAGO A SOCIO", f"${pago_socio:,.2f}")
+        link_admin = f"https://wa.me/{mi_numero}?text={urllib.parse.quote('*AUDITORÍA* ' + texto_cotizacion + f'\\n💎 Ganancia: ${utilidad_yaja}')}"
+        st.markdown(f'<a href="{link_admin}" target="_blank" style="color:#00FF00; text-decoration:none;">➡️ Enviar mi Copia de Auditoría</a>', unsafe_allow_html=True)
+
+st.markdown("<p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS v3.0 - Control Total</p>", unsafe_allow_html=True)
