@@ -3,7 +3,6 @@ import urllib.parse
 import pandas as pd
 from datetime import datetime
 import os
-from fpdf import FPDF  # Librería para generar el PDF
 
 # 1. CONFIGURACIÓN VISUAL
 st.set_page_config(page_title="OKGRUAS RS - Control Excel", page_icon="🚛", layout="wide")
@@ -17,38 +16,19 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# FUNCIÓN PARA GENERAR EL PDF DE COTIZACIÓN
-def crear_pdf(datos):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="COTIZACIÓN DE SERVICIO - OKGRUAS RS", ln=True, align='C')
-    pdf.ln(10)
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Folio: {datos['Folio']}", ln=True)
-    pdf.cell(200, 10, txt=f"Fecha: {datos['Fecha']}", ln=True)
-    pdf.cell(200, 10, txt=f"Cliente: {datos['Cliente']}", ln=True)
-    pdf.cell(200, 10, txt=f"Falla: {datos['Falla']}", ln=True)
-    pdf.ln(5)
-    pdf.cell(200, 10, txt=f"Kilómetros: {datos['KM']}", ln=True)
-    pdf.cell(200, 10, txt=f"Costo Maniobras: ${datos['Maniobras']:,.2f}", ln=True)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, txt=f"TOTAL A PAGAR: ${datos['Total']:,.2f}", ln=True)
-    pdf.ln(10)
-    pdf.set_font("Arial", 'I', 10)
-    pdf.cell(200, 10, txt="Gracias por su preferencia. Servicio disponible en Monterrey, N.L.", ln=True, align='C')
-    return pdf.output(dest='S').encode('latin-1')
-
 # 2. SISTEMA DE EXCEL (ORDENADO POR COLUMNAS)
 ARCHIVO_EXCEL = "registro_asistencias_rs.csv"
 COLUMNAS = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
 
 def inicializar_y_guardar(datos=None):
+    # Si no existe, crea el archivo con el separador correcto para Excel
     if not os.path.exists(ARCHIVO_EXCEL):
         pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_EXCEL, index=False, sep=';')
+    
     try:
         df = pd.read_csv(ARCHIVO_EXCEL, sep=';')
     except:
+        # En caso de error, reinicia el archivo limpio
         pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_EXCEL, index=False, sep=';')
         df = pd.read_csv(ARCHIVO_EXCEL, sep=';')
     
@@ -56,8 +36,10 @@ def inicializar_y_guardar(datos=None):
         siguiente_folio = f"RS2014-{len(df) + 1}"
         datos["Folio"] = siguiente_folio
         nuevo_registro = pd.DataFrame([datos])[COLUMNAS]
+        # Guardar con sep=';' para que Excel lo abra con columnas separadas
         nuevo_registro.to_csv(ARCHIVO_EXCEL, mode='a', header=False, index=False, sep=';')
         return siguiente_folio
+    
     return f"RS2014-{len(df) + 1}"
 
 # 3. SEGURIDAD DE ACCESO
@@ -113,7 +95,7 @@ with col_calculos:
 # 5. REGISTRO Y WHATSAPP
 st.divider()
 if len(cliente_tel) >= 10:
-    if st.button("🚀 REGISTRAR SERVICIO", use_container_width=True):
+    if st.button("🚀 REGISTRAR Y GENERAR WHATSAPP", use_container_width=True):
         datos_registro = {
             "Folio": "", 
             "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -126,30 +108,13 @@ if len(cliente_tel) >= 10:
         }
         
         folio_real = inicializar_y_guardar(datos_registro)
-        st.session_state['ultimo_registro'] = datos_registro
+        
+        # MENSAJE LIMPIO
+        mensaje = (f"*OKGRUAS RS*\n🆔 *Folio: {folio_real}*\n👤 Cliente: {datos_registro['Cliente']}\n🛠️ Falla: {tipo_falla}\n💰 *TOTAL: ${TOTAL_A_COBRAR:,.2f}*\n------------------\n_Servicio Monterrey_")
+        url_wa = f"https://wa.me/52{cliente_tel[-10:]}?text={urllib.parse.quote(mensaje)}"
+        
         st.success(f"✅ ¡Servicio {folio_real} guardado en el Excel!")
-
-    # Si ya se registró, mostramos los botones de envío
-    if 'ultimo_registro' in st.session_state:
-        reg = st.session_state['ultimo_registro']
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            # BOTÓN WHATSAPP
-            mensaje = (f"*OKGRUAS RS*\n🆔 *Folio: {reg['Folio']}*\n👤 Cliente: {reg['Cliente']}\n🛠️ Falla: {reg['Falla']}\n💰 *TOTAL: ${reg['Total']:,.2f}*\n------------------\n_Servicio Monterrey_")
-            url_wa = f"https://wa.me/52{cliente_tel[-10:]}?text={urllib.parse.quote(mensaje)}"
-            st.link_button("📲 ENVIAR POR WHATSAPP", url_wa, type="primary", use_container_width=True)
-        
-        with c2:
-            # BOTÓN DESCARGAR COTIZACIÓN PDF
-            pdf_bytes = crear_pdf(reg)
-            st.download_button(
-                label="📄 DESCARGAR COTIZACIÓN PDF",
-                data=pdf_bytes,
-                file_name=f"Cotizacion_{reg['Folio']}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
+        st.link_button("📲 ENVIAR POR WHATSAPP", url_wa, type="primary", use_container_width=True)
 else:
     st.info("💡 Ingresa el número del cliente para registrar.")
 
@@ -159,8 +124,11 @@ with st.expander("📊 PANEL ADMINISTRADOR"):
         if os.path.exists(ARCHIVO_EXCEL):
             df_final = pd.read_csv(ARCHIVO_EXCEL, sep=';')
             st.dataframe(df_final, use_container_width=True)
+            
+            # COMISIÓN AL 10%
             mi_comision = df_final["Total"].sum() * 0.10
             st.metric("TU GANANCIA (10%)", f"${mi_comision:,.2f}")
+            
             st.download_button("📥 DESCARGAR EXCEL COMPLETO", 
                              data=df_final.to_csv(index=False, sep=';').encode('utf-8'), 
                              file_name="reporte_servicios_rs.csv", mime="text/csv")
