@@ -4,117 +4,159 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# 1. ESTILO Y CONFIGURACIÓN
-st.set_page_config(page_title="OKGRUAS RS - Control Total", page_icon="🚛", layout="wide")
+# 1. CONFIGURACIÓN Y ESTILO PROFESIONAL
+st.set_page_config(page_title="OKGRUAS RS Control", page_icon="🚛", layout="wide")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
-    html, body, [class*="css"] { font-family: 'Montserrat', sans-serif; background-color: #121212; color: #FFFFFF; }
-    .stMetric { background-color: #1e1e1e; border: 1px solid #00FF00; padding: 15px; border-radius: 10px; }
-    .price-tag { background-color: #262626; padding: 10px; border-radius: 5px; border-left: 3px solid #00FF00; margin-bottom: 5px; }
+    html, body, [class*="css"] {
+        font-family: 'Montserrat', sans-serif;
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+    .stMetric {
+        background-color: #1e1e1e;
+        border: 1px solid #00FF00;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    .price-tag {
+        background-color: #262626;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 3px solid #00FF00;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. MOTOR DE REGISTRO (CREA EL EXCEL AUTOMÁTICO)
-ARCHIVO = "registro_asistencias.csv"
+# 2. SISTEMA DE BASE DE DATOS MEJORADO
+ARCHIVO_REGISTRO = "registro_asistencias.csv"
 
-def inicializar_y_registrar(datos=None):
-    # Crea el archivo con encabezados si no existe
-    if not os.path.exists(ARCHIVO):
-        df_base = pd.DataFrame(columns=["Folio", "Fecha", "Cliente", "WhatsApp", "Total", "Falla"])
-        df_base.to_csv(ARCHIVO, index=False)
-    
-    df = pd.read_csv(ARCHIVO)
-    
-    if datos:
-        # Generar Folio Consecutivo RS2014-X
-        nuevo_num = len(df) + 1
-        folio_nuevo = f"RS2014-{nuevo_num}"
-        datos["Folio"] = folio_nuevo
-        
-        # Guardar en el archivo inmediatamente
-        nuevo_df = pd.DataFrame([datos])
-        nuevo_df.to_csv(ARCHIVO, mode='a', header=False, index=False)
-        return folio_nuevo
-    
-    return f"RS2014-{len(df) + 1}"
+def inicializar_base_datos():
+    # Creamos las columnas exactas para que el Excel sea profesional
+    if not os.path.exists(ARCHIVO_REGISTRO):
+        columnas = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total", "Estado"]
+        df_vacio = pd.DataFrame(columns=columnas)
+        df_vacio.to_csv(ARCHIVO_REGISTRO, index=False)
 
-# 3. SEGURIDAD DE ACCESO
+def registrar_servicio(datos):
+    inicializar_base_datos()
+    df = pd.read_csv(ARCHIVO_REGISTRO)
+    
+    # Generar folio consecutivo real
+    siguiente_num = len(df) + 1
+    nuevo_folio = f"RS2014-{siguiente_num}"
+    
+    datos["Folio"] = nuevo_folio
+    nuevo_df = pd.DataFrame([datos])
+    # Guardar inmediatamente
+    nuevo_df.to_csv(ARCHIVO_REGISTRO, mode='a', header=False, index=False)
+    return nuevo_folio
+
+# 3. ACCESO RESTRINGIDO
 if 'auth' not in st.session_state: st.session_state['auth'] = False
 if not st.session_state['auth']:
     st.markdown("<h1 style='color: #00FF00; text-align: center;'>🔐 ACCESO RS</h1>", unsafe_allow_html=True)
     col_l1, col_l2, col_l3 = st.columns([1,2,1])
     with col_l2:
-        if st.text_input("Clave", type="password") == "RS2026":
-            if st.button("ENTRAR"):
+        clave = st.text_input("Clave de Acceso", type="password")
+        if st.button("ENTRAR"):
+            if clave == "RS2026":
                 st.session_state['auth'] = True
                 st.rerun()
     st.stop()
 
-# 4. CAPTURA DE DATOS
-st.markdown("<h1 style='color: #00FF00;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+# 4. INTERFAZ DE USUARIO
+st.markdown("<h1 style='color: #00FF00; margin-bottom: 0;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
+st.markdown("<p style='color: #888;'>Panel de Control de Cotizaciones</p>", unsafe_allow_html=True)
+st.divider()
+
 col_in, col_res = st.columns([3, 2])
 
 with col_in:
-    st.markdown("### 📍 DATOS DEL SERVICIO")
+    st.markdown("<h3 style='color: #00FF00;'>📍 DATOS DEL SERVICIO</h3>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1: cliente = st.text_input("Nombre del Cliente:")
-    with c2: tel = st.text_input("WhatsApp (10 dígitos):")
+    with c2: tel_cliente = st.text_input("WhatsApp Cliente (10 dígitos):")
     
-    km = st.number_input("Kilómetros:", min_value=0.0, step=1.0)
-    falla = st.selectbox("Falla:", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Sótano/Maniobra"])
+    ck1, ck2 = st.columns(2)
+    with ck1: km = st.number_input("KM Recorridos:", min_value=0.0, step=1.0)
+    with ck2: costo_km = st.number_input("Costo por KM ($):", min_value=0.0, value=25.0)
     
-    m_check = st.checkbox("¿Hubo maniobras extras?")
-    costo_m = 350.0 if m_check else 0.0
+    falla = st.selectbox("Tipo de Falla:", ["Falla Mecánica", "Choque / Siniestro", "Llanta Ponchada", "Sin Batería", "Auto Bloqueado", "Maniobra Especial"])
+    
+    st.markdown("**🔧 Maniobras Extras ($350 c/u)**")
+    cm1, cm2, cm3 = st.columns(3)
+    with cm1: m1 = st.checkbox("Volante/Llantas")
+    with cm2: m2 = st.checkbox("No entra Neutral")
+    with cm3: m3 = st.checkbox("Especial")
+    
+    sotano = st.checkbox("🔦 ¿Es Sótano?")
+    pisos = st.number_input("Niveles:", min_value=0, step=1) if sotano else 0
 
 # CÁLCULOS
-total = 800.0 + (km * 25.0) + costo_m
+BANDERAZO = 800.0
+TOTAL_KM = km * costo_km
+TOTAL_MAN = (350.0 if m1 else 0) + (350.0 if m2 else 0) + (350.0 if m3 else 0) + (pisos * 350.0)
+TOTAL_NETO = BANDERAZO + TOTAL_KM + TOTAL_MAN
 
 with col_res:
-    st.markdown("### 📋 DESGLOSE")
-    st.markdown(f"<div class='price-tag'>🏁 Banderazo: $800.00</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='price-tag'>🛣️ KM: ${km*25:,.2f}</div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #00FF00;'>📋 DESGLOSE</h3>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🏁 Banderazo: <b>$800.00</b></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🛣️ Recorrido: <b>${TOTAL_KM:,.2f}</b></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🔧 Maniobras: <b>${TOTAL_MAN:,.2f}</b></div>", unsafe_allow_html=True)
     st.divider()
-    st.metric("TOTAL NETO", f"${total:,.2f}")
-    st.caption(f"Siguiente Folio: {inicializar_y_registrar()}")
+    st.metric("TOTAL NETO", f"${TOTAL_NETO:,.2f}")
 
-# 5. EL BOTÓN "PERFECTO" DE REGISTRO
+# 5. REGISTRO Y ENVÍO AUTOMÁTICO
 st.divider()
-if len(tel) >= 10:
-    if st.button("✅ REGISTRAR Y GENERAR COTIZACIÓN", use_container_width=True):
-        # PRIMERO SE GUARDA EN EL EXCEL
-        info = {
-            "Folio": "",
-            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+if len(tel_cliente) >= 10:
+    # BOTÓN ÚNICO: Registra y luego permite enviar
+    if st.button("🚀 REGISTRAR Y GENERAR WHATSAPP", use_container_width=True):
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        # Guardar en el Excel
+        datos_para_excel = {
+            "Folio": "", 
+            "Fecha": fecha_actual,
             "Cliente": cliente if cliente else "General",
-            "WhatsApp": tel,
-            "Total": total,
-            "Falla": falla
+            "WhatsApp": tel_cliente,
+            "Falla": falla,
+            "KM": km,
+            "Maniobras": TOTAL_MAN,
+            "Total": TOTAL_NETO,
+            "Estado": "Cotizado" # Aquí queda grabado que se hizo la cotización
         }
-        folio_final = inicializar_y_registrar(info)
         
-        # LUEGO SE PREPARA EL LINK
-        msg = (f"*OKGRUAS RS - COTIZACIÓN*\n"
-               f"🆔 *Folio: {folio_final}*\n"
-               f"👤 Cliente: {info['Cliente']}\n"
-               f"💰 TOTAL: ${total:,.2f}\n"
-               f"--------------------------\n"
-               f"Reportar a: 528143029578")
+        folio_real = registrar_servicio(datos_para_excel)
         
-        link = f"https://wa.me/52{tel[-10:]}?text={urllib.parse.quote(msg)}"
+        # Preparar mensaje para el socio/cliente
+        texto_ws = (f"*OKGRUAS RS - COTIZACIÓN*\n"
+                    f"🆔 *Folio: {folio_real}*\n"
+                    f"📅 Fecha: {fecha_actual}\n"
+                    f"👤 Cliente: {cliente if cliente else 'General'}\n"
+                    f"🛠️ Falla: {falla}\n"
+                    f"--------------------------\n"
+                    f"✅ Banderazo: $800\n"
+                    f"📍 KM ({km}): ${TOTAL_KM:,.2f}\n"
+                    f"🔧 Maniobras: ${TOTAL_MAN:,.2f}\n"
+                    f"--------------------------\n"
+                    f"💰 *TOTAL: ${TOTAL_NETO:,.2f}*\n"
+                    f"--------------------------\n"
+                    f"Reportar a: 528143029578")
         
-        st.success(f"📦 Servicio {folio_final} guardado en el archivo correctamente.")
-        st.link_button("📲 ENVIAR POR WHATSAPP", link, type="primary", use_container_width=True)
+        num_dest = "52" + tel_cliente[-10:]
+        link = f"https://wa.me/{num_dest}?text={urllib.parse.quote(texto_ws)}"
+        
+        st.success(f"✅ ¡Servicio {folio_real} grabado en el sistema!")
+        st.link_button("📲 ENVIAR COTIZACIÓN POR WHATSAPP", link, type="primary", use_container_width=True)
 else:
-    st.warning("Escribe el número del cliente para poder registrar.")
+    st.warning("⚠️ Ingresa el número de WhatsApp para habilitar el botón.")
 
-# 6. PANEL PARA DESCARGAR EL EXCEL
-with st.expander("📊 PANEL ADMINISTRADOR"):
-    if st.text_input("Clave Admin", type="password") == "RS2014":
-        if os.path.exists(ARCHIVO):
-            df_log = pd.read_csv(ARCHIVO)
-            st.dataframe(df_log)
-            st.download_button("📥 DESCARGAR REGISTRO COMPLETO", 
-                             data=df_log.to_csv(index=False).encode('utf-8'),
-                             file_name="servicios_rs.csv", mime="text/csv")
+# 6. PANEL ADMIN YAJAIRA
+with st.expander("🔐 PANEL DE AUDITORÍA"):
+    adm_clave = st.text_input("Clave Admin", type="password")
+    if adm_clave ==
