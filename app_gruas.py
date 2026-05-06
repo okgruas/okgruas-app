@@ -113,12 +113,12 @@ if submit_rs:
             f"🏁 *Destino:* {punto_destino}\n"
             f"--------------------------------"
         )
-        link_ws = f"https://wa.me/528143029578?text={urllib.parse.quote(msg)}"
+        link_ws = f"https://wa.me/528120950997?text={urllib.parse.quote(msg)}"
         st.markdown(f'<a href="{link_ws}" target="_blank"><div style="background-color: #00FF00; color: black; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold;">✅ CONFIRMAR EN WHATSAPP</div></a>', unsafe_allow_html=True)
     else:
         st.error("⚠️ El nombre es necesario.")
 
 # --- 6. LLAMADA AL FINAL ---
-st.markdown('<a href="tel:8143029578" class="call-footer">📞 EMERGENCIAS: 81 4302 9578</a>', unsafe_allow_html=True)
+st.markdown('<a href="tel:8120950997" class="call-footer">📞 EMERGENCIAS: 81 2095 0997</a>', unsafe_allow_html=True)
 
 st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Monterrey, N.L.</p>", unsafe_allow_html=True)
