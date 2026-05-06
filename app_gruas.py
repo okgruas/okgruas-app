@@ -1,6 +1,6 @@
 import streamlit as st
 import urllib.parse
-import os
+from streamlit_js_eval import streamlit_js_eval
 
 # 1. CONFIGURACIÓN
 st.set_page_config(page_title="OKGRUAS RS - Cotización", page_icon="🚛", layout="centered")
@@ -24,16 +24,9 @@ st.markdown("""
         background-color: #00FF00 !important; color: #000000 !important; 
         border-radius: 10px; font-weight: bold; width: 100%; height: 3.5em;
     }
+    hr { border-top: 1px solid #00FF00 !important; }
 
-    /* ESTILO PARA EL LOGO TRASLÚCIDO */
-    .logo-container {
-        opacity: 0.5; /* Ajusta la transparencia aquí (0.1 es muy invisible, 1.0 es sólido) */
-        transition: opacity 0.3s;
-    }
-    .logo-container:hover {
-        opacity: 1.0; /* Se aclara cuando pasas el mouse */
-    }
-
+    /* Botón de llamada al final */
     .call-footer {
         display: block;
         background-color: #1A1A1A;
@@ -47,78 +40,134 @@ st.markdown("""
         font-size: 1rem;
         margin-top: 20px;
     }
+
+    @media print {
+        body, .stApp { background-color: #000000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        h1, h2, h3, label, p, span, b { color: #00FF00 !important; -webkit-print-color-adjust: exact !important; }
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. CABECERA CON LOGO TRASLÚCIDO
-col_logo1, col_logo2 = st.columns([1, 2])
+# --- OBTENCIÓN DE UBICACIÓN GPS ---
+location = streamlit_js_eval(data_key='pos', func_name='getCurrentPosition', want_output=True)
+lat_long_str = ""
+if location:
+    lat = location['coords']['latitude']
+    lon = location['coords']['longitude']
+    lat_long_str = f"https://www.google.com/maps?q={lat},{lon}"
 
+# 3. CABECERA
+col_logo1, col_logo2 = st.columns([1, 2])
 with col_logo1:
-    # Intentamos cargar el logo desde tu carpeta de GitHub
-    if os.path.exists("logo.png"):
-        st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-        st.image("logo.png", width=120)
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        # Si no encuentra el archivo, pone el emoji traslúcido
-        st.markdown("<h1 style='margin:0; opacity: 0.5;'>🚛</h1>", unsafe_allow_html=True)
+    try:
+        st.image("logo.png", width=120) 
+    except:
+        st.markdown("<h1 style='margin:0;'>🚛</h1>", unsafe_allow_html=True)
 
 with col_logo2:
     st.markdown("<h1 style='margin-bottom: 0px; padding-top: 10px;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888;'>Servicio en Monterrey Área Metropolitana y Otros Municipios</p>", unsafe_allow_html=True)
 
 st.divider()
 
 # --- RECOMENDACIONES DE SEGURIDAD ---
-with st.expander("🛡️ RECOMENDACIONES DE SEGURIDAD"):
+with st.expander("🛡️ RECOMENDACIONES DE SEGURIDAD (Leer importante)"):
     st.markdown("""
     * **Mantén la calma:** Ya estamos en camino.
-    * **Encienda luces intermitentes:** Hazte visible.
-    * **Resguárdate:** Si es posible, espera fuera del vehículo en zona segura.
+    * **Encienda luces intermitentes:** Hazte visible para otros conductores.
+    * **Baje del vehículo:** Si es seguro, resguárdate fuera del arroyo vehicular.
+    * **No acepte ayuda de extraños:** Espere a la unidad oficial identificada.
     """)
+
+# --- TARIFAS ---
+st.markdown("### 💰 Tarifas Base")
+c_tar1, c_tar2 = st.columns(2)
+with c_tar1:
+    st.markdown("📍 **Banderazo:** $800.00")
+with c_tar2:
+    st.markdown("🛣️ **Km Extra:** $25.00")
 
 # 4. FORMULARIO
 st.markdown("### 📋 Datos del Servicio")
-with st.form("form_rs_v5"):
-    nombre = st.text_input("Nombre del Cliente")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        vehiculo = st.text_input("Marca y Modelo")
+with st.form("form_rs_final"):
+    col_v1, col_v2 = st.columns(2)
+    with col_v1:
+        nombre = st.text_input("Nombre del Cliente")
         año_auto = st.text_input("Año")
-    with col2:
-        color_auto = st.text_input("Color")
-        placas = st.text_input("Placas")
+        color_auto = st.text_input("Color del Auto")
+    with col_v2:
+        vehiculo = st.text_input("Marca y Modelo")
+        placas_auto = st.text_input("Placas")
+        zona_serv = st.selectbox("Zona Sugerida", ["Local (Mty)", "Foráneo"])
 
     st.divider()
     
     punto_recoleccion = st.text_input("📍 Punto de Recolección (Manual)")
+    st.markdown("<p style='color: #888; font-size: 0.8rem; margin-top: -15px;'>(Si desconoce la ubicación, se le brindara apoyo)</p>", unsafe_allow_html=True)
+    
     punto_destino = st.text_input("🏁 Punto Destino")
     
-    falla = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Falta de Gasolina", "Bloqueado"])
+    st.divider()
+    st.markdown("#### 🛠️ Estado del Vehículo")
+    cf1, cf2 = st.columns(2)
+    with cf1:
+        is_neutral = st.checkbox("¿Se puede poner en neutral?")
+        is_giro = st.checkbox("¿Ruedas y volante giran?")
+    with cf2:
+        falla_tipo = st.selectbox("Problema", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Falta de Gasolina", "Bloqueado"])
+
+    notas_serv = st.text_area("Notas adicionales")
+    st.markdown("<p style='color: #00FF00; font-weight: bold; text-align: center;'>⚠️ Al confirmar, se abrirá WhatsApp con tus datos y un asesor le enviara costo total del servicio.</p>", unsafe_allow_html=True)
     
-    submit_rs = st.form_submit_button("🚀 ENVIAR REPORTE POR WHATSAPP")
+    submit_rs = st.form_submit_button("🚀 ENVIAR SOLICITUD PARA COTIZACION")
 
 # 5. LÓGICA WHATSAPP
 if submit_rs:
     if nombre:
+        gps_final = lat_long_str if lat_long_str else "GPS no activado por el usuario"
+        n_txt = "SÍ" if is_neutral else "NO"
+        g_txt = "SÍ" if is_giro else "NO"
+        
         msg = (
-            f"*🚨 SOLICITUD OKGRUAS RS*\n"
+            f"*NUEVA SOLICITUD OKGRUAS RS*\n"
+            f"Buen día compañeros solicitando su apoyo\n"
             f"--------------------------------\n"
             f"👤 *Cliente:* {nombre}\n"
             f"🚗 *Auto:* {vehiculo} ({año_auto})\n"
-            f"🔢 *Placas:* {placas}\n"
-            f"🚨 *Falla:* {falla}\n"
-            f"📍 *Origen:* {punto_recoleccion}\n"
-            f"🏁 *Destino:* {punto_destino}\n"
-            f"--------------------------------"
+            f"🎨 *Color:* {color_auto} | *Placas:* {placas_auto}\n"
+            f"--------------------------------\n"
+            f"📍 *Origen:* {punto_recoleccion if punto_recoleccion else 'Ver GPS abajo'}\n"
+            f"🏁 *Punto Destino:* {punto_destino}\n"
+            f"--------------------------------\n"
+            f"⚙️ *Neutral:* {n_txt} | *Gira:* {g_txt}\n"
+            f"🚨 *Falla:* {falla_tipo}\n"
+            f"📍 *GPS:* {gps_final}\n"
+            f"📝 *Notas:* {notas_serv}\n"
+            f"--------------------------------\n"
+            f"🧐 *Pendiente cotización final.*"
         )
-        link_ws = f"https://wa.me/528120950997?text={urllib.parse.quote(msg)}"
-        st.markdown(f'<a href="{link_ws}" target="_blank"><div style="background-color: #00FF00; color: black; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold;">✅ CONFIRMAR EN WHATSAPP</div></a>', unsafe_allow_html=True)
+        link_ws = f"https://wa.me/528143029578?text={urllib.parse.quote(msg)}"
+        st.markdown(f'<a href="{link_ws}" target="_blank"><div style="background-color: #00FF00; color: black; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.2rem;">✅ ENVIAR POR WHATSAPP</div></a>', unsafe_allow_html=True)
     else:
-        st.error("⚠️ El nombre es necesario.")
+        st.error("⚠️ El nombre es necesario para continuar.")
+import segno
+import io
 
-# --- 6. LLAMADA AL FINAL ---
-st.markdown('<a href="tel:8120950997" class="call-footer">📞 EMERGENCIAS: 81 2095 0997</a>', unsafe_allow_html=True)
+st.divider()
+st.markdown("<h3 style='text-align: center;'>📲 ¡Comparte OKGRUAS RS!</h3>", unsafe_allow_html=True)
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Monterrey, N.L.</p>", unsafe_allow_html=True)
+# Generamos el QR profesionalmente con código
+# Sustituye la URL por la tuya real
+url_app = "https://okgruas-rs.streamlit.app"
+qr = segno.make_qr(url_app)
+
+# Lo guardamos en un "archivo virtual" para mostrarlo en Streamlit
+buffer = io.BytesIO()
+qr.save(buffer, kind='png', scale=10, dark='#00FF00', light='#000000') # Colores neón
+
+col_q1, col_q2, col_q3 = st.columns([1, 1, 1])
+with col_q2:
+    st.image(buffer.getvalue(), caption="Escanea para compartir", use_column_width=True)# --- 6. BOTÓN DE LLAMADA AL FINAL (TUS PETICIÓN) ---
+st.markdown('<a href="tel:8143029578" class="call-footer">📞 LLAMADA DE EMERGENCIA: 81 4302 9578</a>', unsafe_allow_html=True)
+
+st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
