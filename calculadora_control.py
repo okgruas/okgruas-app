@@ -4,93 +4,97 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# 1. CONFIGURACIÓN VISUAL RS
-st.set_page_config(page_title="OKGRUAS RS - Oficial", page_icon="🚛", layout="wide")
+# 1. ESTILO RS
+st.set_page_config(page_title="OKGRUAS RS - Sistema Monterrey", page_icon="🚛", layout="wide")
 
-# 2. SISTEMA DE EXCEL REAL (SIN LEYENDAS AMARILLAS)
-ARCHIVO_OFICIAL = "servicios_monterrey_rs.xlsx"
+# 2. SISTEMA DE EXCEL (FORMATO NATIVO .XLSX)
+# Cambiamos a .xlsx para evitar la advertencia de "pérdida de datos"
+ARCHIVO_REGISTRO = "servicios_okgruas_rs.xlsx"
 COLUMNAS = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
 
-def gestionar_excel(datos=None):
-    # Si el archivo no existe, lo creamos como .xlsx real
-    if not os.path.exists(ARCHIVO_OFICIAL):
-        pd.DataFrame(columns=COLUMNAS).to_excel(ARCHIVO_OFICIAL, index=False)
+def gestionar_datos_excel(datos_nuevos=None):
+    if not os.path.exists(ARCHIVO_REGISTRO):
+        pd.DataFrame(columns=COLUMNAS).to_excel(ARCHIVO_REGISTRO, index=False)
     
-    df = pd.read_excel(ARCHIVO_OFICIAL)
+    # Leemos el archivo actual
+    df_actual = pd.read_excel(ARCHIVO_REGISTRO)
     
-    if datos:
-        folio = f"RS2014-{len(df) + 1}"
-        datos["Folio"] = folio
-        # Guardamos el nuevo servicio
-        nuevo_registro = pd.DataFrame([datos])[COLUMNAS]
-        df_final = pd.concat([df, nuevo_registro], ignore_index=True)
-        df_final.to_excel(ARCHIVO_OFICIAL, index=False)
-        return folio
+    if datos_nuevos:
+        id_folio = f"RS2014-{len(df_actual) + 1}"
+        datos_nuevos["Folio"] = id_folio
+        # Agregamos el nuevo servicio
+        registro_df = pd.DataFrame([datos_nuevos])[COLUMNAS]
+        df_final = pd.concat([df_actual, registro_df], ignore_index=True)
+        # Guardar como Excel nativo
+        df_final.to_excel(ARCHIVO_REGISTRO, index=False)
+        return id_folio
     
-    return f"RS2014-{len(df) + 1}"
+    return f"RS2014-{len(df_actual) + 1}"
 
-# 3. INTERFAZ DE USUARIO
+# 3. INTERFAZ PRINCIPAL
 st.markdown("<h1 style='color: #00FF00;'>OKGRUAS RS 🚛</h1>", unsafe_allow_html=True)
 st.divider()
 
-col_datos, col_total = st.columns([3, 2])
+col_form, col_resumen = st.columns([3, 2])
 
-with col_datos:
+with col_form:
     st.markdown("### 📍 REGISTRO DE SERVICIO")
     c1, c2 = st.columns(2)
-    with c1: cliente = st.text_input("Nombre del Cliente:")
-    with c2: tel = st.text_input("WhatsApp (10 dígitos):")
+    with c1: nom_cliente = st.text_input("Nombre del Cliente:")
+    with c2: tel_cliente = st.text_input("WhatsApp (10 dígitos):")
     
     ck1, ck2 = st.columns(2)
-    with ck1: km = st.number_input("KM Recorridos:", min_value=0.0, step=1.0)
-    with ck2: falla = st.selectbox("Falla:", ["Mecánica", "Choque", "Llanta", "Batería", "Sótano"])
+    with ck1: dist_km = st.number_input("Kilómetros Recorridos:", min_value=0.0, step=1.0)
+    with ck2: tipo_incidente = st.selectbox("Falla:", ["Mecánica", "Choque", "Llanta", "Batería", "Sótano"])
     
     st.markdown("**🔧 Maniobras Extras ($350 c/u)**")
     m1, m2, m3 = st.columns(3)
-    v_traba = m1.checkbox("Llantas trabadas")
-    n_neutro = m2.checkbox("No entra Neutral")
+    llantas_t = m1.checkbox("Llantas trabadas")
+    no_neutral = m2.checkbox("No entra Neutral")
     m_especial = m3.checkbox("Especial")
     
-    es_sotano = st.checkbox("🔦 ¿Es Sótano?")
-    niveles = st.number_input("Pisos:", min_value=0, step=1) if es_sotano else 0
+    en_sotano = st.checkbox("🔦 ¿Es Sótano?")
+    num_pisos = st.number_input("Pisos:", min_value=0, step=1) if en_sotano else 0
 
-# CÁLCULOS
-COSTO_EXTRAS = (350.0 * sum([v_traba, n_neutro, m_especial])) + (niveles * 350.0)
-TOTAL_NETO = 800.0 + (km * 25.0) + COSTO_EXTRAS
+# CÁLCULOS (Arregla el error de NameError)
+EXTRAS_CALC = (350.0 * sum([llantas_t, no_neutral, m_especial])) + (num_pisos * 350.0)
+TOTAL_CALCULADO = 800.0 + (dist_km * 25.0) + EXTRAS_CALC
 
-with col_total:
+with col_resumen:
     st.markdown("### 📋 RESUMEN")
-    st.metric("TOTAL A COBRAR", f"${TOTAL_TOTAL:,.2f}")
-    st.caption(f"Siguiente Folio: {gestionar_excel()}")
+    # Mostramos el total con el nombre correcto de variable
+    st.metric("TOTAL A COBRAR", f"${TOTAL_CALCULADO:,.2f}")
+    st.caption(f"Siguiente Folio a Generar: {gestionar_datos_excel()}")
 
-# 4. BOTÓN DE REGISTRO
+# 4. BOTÓN DE GUARDADO
 st.divider()
-if len(tel) >= 10:
+if len(tel_cliente) >= 10:
     if st.button("🚀 GUARDAR Y ENVIAR WHATSAPP", use_container_width=True):
-        info_servicio = {
+        nuevo_servicio = {
             "Folio": "", "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "Cliente": cliente if cliente else "Gral",
-            "WhatsApp": tel, "Falla": falla, "KM": km,
-            "Maniobras": COSTO_EXTRAS, "Total": TOTAL_NETO
+            "Cliente": nom_cliente if nom_cliente else "Cliente General",
+            "WhatsApp": tel_cliente, "Falla": tipo_incidente, "KM": dist_km,
+            "Maniobras": EXTRAS_CALC, "Total": TOTAL_CALCULADO
         }
-        f_real = gestionar_excel(info_servicio)
+        folio_generado = gestionar_datos_excel(nuevo_servicio)
         
-        # WhatsApp sin símbolos raros
-        msj = (f"*OKGRUAS RS*\n🆔 Folio: {f_real}\n👤 Cliente: {info_servicio['Cliente']}\n💰 *TOTAL: ${TOTAL_NETO:,.2f}*")
-        link_wa = f"https://wa.me/52{tel[-10:]}?text={urllib.parse.quote(msj)}"
+        # Formateamos el mensaje de WhatsApp sin códigos raros
+        mensaje_wa = (f"*OKGRUAS RS*\n🆔 *Folio: {folio_generado}*\n👤 Cliente: {nuevo_servicio['Cliente']}\n🛠️ Falla: {tipo_incidente}\n💰 *TOTAL: ${TOTAL_CALCULADO:,.2f}*")
+        url_final = f"https://wa.me/52{tel_cliente[-10:]}?text={urllib.parse.quote(mensaje_wa)}"
         
-        st.success(f"✅ ¡Folio {f_real} guardado!")
-        st.link_button("📲 ENVIAR POR WHATSAPP", link_wa, type="primary", use_container_width=True)
+        st.success(f"✅ ¡Servicio {folio_generado} registrado con éxito!")
+        st.link_button("📲 ENVIAR POR WHATSAPP", url_final, type="primary", use_container_width=True)
 else:
-    st.warning("⚠️ Pon el WhatsApp del cliente para guardar.")
+    st.info("💡 Por favor, ingresa el WhatsApp del cliente para habilitar el registro.")
 
-# 5. PANEL DE AUDITORÍA (GANANCIA 10%)
+# 5. ADMINISTRACIÓN (10% COMISIÓN)
 with st.expander("📊 RENDIMIENTO PRIVADO"):
-    if st.text_input("Clave Admin", type="password") == "RS2014":
-        if os.path.exists(ARCHIVO_OFICIAL):
-            df_historial = pd.read_excel(ARCHIVO_OFICIAL)
-            st.dataframe(df_historial)
+    clave_adm = st.text_input("Clave Admin", type="password")
+    if clave_adm == "RS2014": # Corregimos el SyntaxError aquí
+        if os.path.exists(ARCHIVO_REGISTRO):
+            df_admin = pd.read_excel(ARCHIVO_REGISTRO)
+            st.dataframe(df_admin, use_container_width=True)
             
-            # COMISIÓN AL 10%
-            ganancia_rs = df_historial["Total"].sum() * 0.10
-            st.metric("TU GANANCIA (10%)", f"${ganancia_rs:,.2f}")
+            # Cálculo de tu ganancia al 10%
+            mi_ganancia = df_admin["Total"].sum() * 0.10
+            st.metric("TU GANANCIA (10%)", f"${mi_ganancia:,.2f}")
