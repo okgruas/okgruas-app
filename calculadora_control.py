@@ -4,8 +4,8 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# 1. ESTILO PROFESIONAL RS
-st.set_page_config(page_title="OKGRUAS RS - Control Total", page_icon="🚛", layout="wide")
+# 1. CONFIGURACIÓN VISUAL RS
+st.set_page_config(page_title="OKGRUAS RS - Auditoría", page_icon="🚛", layout="wide")
 
 st.markdown("""
     <style>
@@ -16,42 +16,46 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. SISTEMA DE ARCHIVO (CREA COLUMNAS LIMPIAS)
+# 2. SISTEMA DE ARCHIVOS (ANTI-ERRORES)
 ARCHIVO_REGISTRO = "registro_asistencias.csv"
+COLUMNAS = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
 
 def inicializar_y_registrar(datos=None):
-    columnas = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
-    if not os.path.exists(ARCHIVO_REGISTRO):
-        df_base = pd.DataFrame(columns=columnas)
-        df_base.to_csv(ARCHIVO_REGISTRO, index=False)
-    
-    df = pd.read_csv(ARCHIVO_REGISTRO)
+    # Si el archivo no existe o está dañado, lo creamos de cero
+    try:
+        if not os.path.exists(ARCHIVO_REGISTRO):
+            pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_REGISTRO, index=False)
+        df = pd.read_csv(ARCHIVO_REGISTRO)
+    except Exception:
+        # Si hay error de lectura (como el ParserError), borramos y reiniciamos
+        pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_REGISTRO, index=False)
+        df = pd.read_csv(ARCHIVO_REGISTRO)
     
     if datos:
         siguiente_num = len(df) + 1
         folio_nuevo = f"RS2014-{siguiente_num}"
         datos["Folio"] = folio_nuevo
-        # Reordenar datos para que coincidan con las columnas
-        nuevo_df = pd.DataFrame([datos])[columnas]
+        # Guardar asegurando que no se mezclen las columnas
+        nuevo_df = pd.DataFrame([datos])[COLUMNAS]
         nuevo_df.to_csv(ARCHIVO_REGISTRO, mode='a', header=False, index=False)
         return folio_nuevo
     
     return f"RS2014-{len(df) + 1}"
 
-# 3. ACCESO
+# 3. ACCESO RESTRINGIDO
 if 'auth' not in st.session_state: st.session_state['auth'] = False
 if not st.session_state['auth']:
     st.markdown("<h1 style='color: #00FF00; text-align: center;'>🔐 ACCESO RS</h1>", unsafe_allow_html=True)
     col_l1, col_l2, col_l3 = st.columns([1,2,1])
     with col_l2:
-        clave_input = st.text_input("Clave de Aplicación", type="password")
+        clave_app = st.text_input("Clave", type="password")
         if st.button("ENTRAR"):
-            if clave_input == "RS2026":
+            if clave_app == "RS2026":
                 st.session_state['auth'] = True
                 st.rerun()
     st.stop()
 
-# 4. INTERFAZ DE CAPTURA
+# 4. CAPTURA DE DATOS
 st.markdown("<h1 style='color: #00FF00;'>OKGRUAS RS</h1>", unsafe_allow_html=True)
 st.divider()
 
@@ -67,72 +71,55 @@ with col_in:
     with ck1: km_n = st.number_input("Kilómetros:", min_value=0.0, step=1.0)
     with ck2: falla_n = st.selectbox("Falla:", ["Mecánica", "Choque", "Llanta", "Batería", "Sótano"])
     
-    st.markdown("**🔧 Maniobras Extras ($350 c/u)**")
-    cm1, cm2 = st.columns(2)
-    with cm1: m_volante = st.checkbox("Volante/Llantas trabadas")
-    with cm2: m_neutral = st.checkbox("No entra Neutral")
-    
-    sotano_n = st.checkbox("🔦 ¿Es Sótano?")
-    pisos_n = st.number_input("Niveles sótano:", min_value=0, step=1) if sotano_n else 0
+    m_extra = st.checkbox("¿Maniobras Extras? ($350)")
+    p_sotano = st.number_input("Niveles Sótano:", min_value=0, step=1) if falla_n == "Sótano" else 0
 
 # CÁLCULOS
-COSTO_MANIOBRAS = (350.0 if m_volante else 0) + (350.0 if m_neutral else 0) + (pisos_n * 350.0)
-TOTAL_CALCULADO = 800.0 + (km_n * 25.0) + COSTO_MANIOBRAS
+COSTO_MAN = (350.0 if m_extra else 0) + (p_sotano * 350.0)
+TOTAL_FINAL = 800.0 + (km_n * 25.0) + COSTO_MAN
 
 with col_res:
     st.markdown("### 📋 DESGLOSE")
     st.markdown(f"<div class='price-tag'>🏁 Banderazo: $800.00</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='price-tag'>🛣️ Recorrido: ${km_n*25:,.2f}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='price-tag'>🔧 Maniobras: ${COSTO_MANIOBRAS:,.2f}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🛣️ KM: ${km_n*25:,.2f}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🔧 Maniobras: ${COSTO_MAN:,.2f}</div>", unsafe_allow_html=True)
     st.divider()
-    st.metric("TOTAL NETO", f"${TOTAL_CALCULADO:,.2f}")
-    st.caption(f"Próximo Folio: {inicializar_y_registrar()}")
+    st.metric("TOTAL NETO", f"${TOTAL_FINAL:,.2f}")
+    st.caption(f"Siguiente Folio: {inicializar_y_registrar()}")
 
-# 5. BOTÓN DE REGISTRO AUTOMÁTICO
+# 5. REGISTRO Y ENVÍO
 st.divider()
 if len(whatsapp_n) >= 10:
-    if st.button("🚀 REGISTRAR Y GENERAR COTIZACIÓN", use_container_width=True):
-        fecha_asistencia = datetime.now().strftime("%d/%m/%Y %H:%M")
-        datos_finales = {
-            "Folio": "",
-            "Fecha": fecha_asistencia,
-            "Cliente": cliente_n if cliente_n else "General",
-            "WhatsApp": whatsapp_n,
-            "Falla": falla_n,
-            "KM": km_n,
-            "Maniobras": COSTO_MANIOBRAS,
-            "Total": TOTAL_CALCULADO
+    if st.button("🚀 REGISTRAR Y GENERAR WHATSAPP", use_container_width=True):
+        fecha_h = datetime.now().strftime("%d/%m/%Y %H:%M")
+        info_servicio = {
+            "Folio": "", "Fecha": fecha_h, "Cliente": cliente_n if cliente_n else "Gral",
+            "WhatsApp": whatsapp_n, "Falla": falla_n, "KM": km_n,
+            "Maniobras": COSTO_MAN, "Total": TOTAL_FINAL
         }
+        f_real = inicializar_y_registrar(info_servicio)
         
-        folio_asig = inicializar_y_registrar(datos_finales)
+        msg_wa = (f"*OKGRUAS RS*\n🆔 Folio: {f_real}\n👤 Cliente: {info_servicio['Cliente']}\n💰 *TOTAL: ${TOTAL_FINAL:,.2f}*\n------------------\nReportar: 528143029578")
+        link_wa = f"https://wa.me/52{whatsapp_n[-10:]}?text={urllib.parse.quote(msg_wa)}"
         
-        # MENSAJE DE WHATSAPP LIMPIO
-        msg = (f"*OKGRUAS RS - COTIZACIÓN*\n"
-               f"🆔 *Folio: {folio_asig}*\n"
-               f"📅 Fecha: {fecha_asistencia}\n"
-               f"👤 Cliente: {datos_finales['Cliente']}\n"
-               f"💰 *TOTAL: ${TOTAL_CALCULADO:,.2f}*\n"
-               f"--------------------------\n"
-               f"Reportar a: 528143029578")
-        
-        link_wa = f"https://wa.me/52{whatsapp_n[-10:]}?text={urllib.parse.quote(msg)}"
-        
-        st.success(f"✅ ¡Folio {folio_asig} guardado en el Excel!")
+        st.success(f"✅ ¡Folio {f_real} guardado!")
         st.link_button("📲 ENVIAR POR WHATSAPP", link_wa, type="primary", use_container_width=True)
 else:
-    st.warning("⚠️ Ingresa el WhatsApp para habilitar el registro.")
+    st.warning("⚠️ Ingresa el número de 10 dígitos.")
 
-# 6. PANEL ADMIN (CORREGIDO)
-with st.expander("📊 PANEL ADMINISTRATIVO"):
-    pass_admin = st.text_input("Clave Admin", type="password")
-    if pass_admin == "RS2014":
-        if os.path.exists(ARCHIVO_REGISTRO):
-            df_final = pd.read_csv(ARCHIVO_REGISTRO)
-            st.dataframe(df_final)
+# 6. PANEL ADMINISTRATIVO (CORREGIDO)
+with st.expander("📊 PANEL DE AUDITORÍA"):
+    clave_adm = st.text_input("Clave Admin", type="password")
+    if clave_adm == "RS2014":
+        try:
+            df_hist = pd.read_csv(ARCHIVO_REGISTRO)
+            st.write("### Historial de Servicios")
+            st.dataframe(df_hist)
             
-            ganancia = df_final["Total"].sum() * 0.15
-            st.metric("TU GANANCIA (15%)", f"${ganancia:,.2f}")
+            ganancia_yaja = df_hist["Total"].sum() * 0.15
+            st.metric("TU GANANCIA (15%)", f"${ganancia_yaja:,.2f}")
             
-            # Botón para descargar
-            csv_data = df_final.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 DESCARGAR EXCEL", data=csv_data, file_name="servicios_rs.csv", mime="text/csv")
+            csv_b = df_hist.to_csv(index=False).encode('utf-8')
+            st.download_button("📥 DESCARGAR EXCEL", data=csv_b, file_name="servicios_rs.csv", mime="text/csv")
+        except:
+            st.error("El archivo está vacío o reiniciándose.")
