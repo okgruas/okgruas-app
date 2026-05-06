@@ -4,88 +4,131 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# 1. ESTILO RS
-st.set_page_config(page_title="OKGRUAS RS - Sistema Monterrey", page_icon="🚛", layout="wide")
+# 1. CONFIGURACIÓN VISUAL
+st.set_page_config(page_title="OKGRUAS RS - Control Excel", page_icon="🚛", layout="wide")
 
-# 2. SISTEMA DE EXCEL (FORMATO NATIVO .XLSX)
-ARCHIVO_REGISTRO = "servicios_okgruas_rs.xlsx"
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Montserrat', sans-serif; background-color: #121212; color: #FFFFFF; }
+    .stMetric { background-color: #1e1e1e; border: 1px solid #00FF00; padding: 15px; border-radius: 10px; }
+    .price-tag { background-color: #262626; padding: 10px; border-radius: 5px; border-left: 3px solid #00FF00; margin-bottom: 5px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 2. SISTEMA DE EXCEL (ORDENADO POR COLUMNAS)
+ARCHIVO_EXCEL = "registro_asistencias_rs.csv"
 COLUMNAS = ["Folio", "Fecha", "Cliente", "WhatsApp", "Falla", "KM", "Maniobras", "Total"]
 
-def gestionar_datos_excel(datos_nuevos=None):
-    if not os.path.exists(ARCHIVO_REGISTRO):
-        pd.DataFrame(columns=COLUMNAS).to_excel(ARCHIVO_REGISTRO, index=False)
+def inicializar_y_guardar(datos=None):
+    # Si no existe, crea el archivo con el separador correcto para Excel
+    if not os.path.exists(ARCHIVO_EXCEL):
+        pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_EXCEL, index=False, sep=';')
     
-    df_actual = pd.read_excel(ARCHIVO_REGISTRO)
+    try:
+        df = pd.read_csv(ARCHIVO_EXCEL, sep=';')
+    except:
+        # En caso de error, reinicia el archivo limpio
+        pd.DataFrame(columns=COLUMNAS).to_csv(ARCHIVO_EXCEL, index=False, sep=';')
+        df = pd.read_csv(ARCHIVO_EXCEL, sep=';')
     
-    if datos_nuevos:
-        id_folio = f"RS2014-{len(df_actual) + 1}"
-        datos_nuevos["Folio"] = id_folio
-        nuevo_registro = pd.DataFrame([datos_nuevos])[COLUMNAS]
-        df_final = pd.concat([df_actual, nuevo_registro], ignore_index=True)
-        df_final.to_excel(ARCHIVO_REGISTRO, index=False)
-        return id_folio
+    if datos:
+        siguiente_folio = f"RS2014-{len(df) + 1}"
+        datos["Folio"] = siguiente_folio
+        nuevo_registro = pd.DataFrame([datos])[COLUMNAS]
+        # Guardar con sep=';' para que Excel lo abra con columnas separadas
+        nuevo_registro.to_csv(ARCHIVO_EXCEL, mode='a', header=False, index=False, sep=';')
+        return siguiente_folio
     
-    return f"RS2014-{len(df_actual) + 1}"
+    return f"RS2014-{len(df) + 1}"
 
-# 3. INTERFAZ PRINCIPAL
+# 3. SEGURIDAD DE ACCESO
+if 'auth' not in st.session_state: st.session_state['auth'] = False
+if not st.session_state['auth']:
+    st.markdown("<h1 style='color: #00FF00; text-align: center;'>🔐 ACCESO RS</h1>", unsafe_allow_html=True)
+    col_l1, col_l2, col_l3 = st.columns([1,2,1])
+    with col_l2:
+        if st.text_input("Ingresa Clave de App", type="password") == "RS2026":
+            if st.button("ENTRAR"):
+                st.session_state['auth'] = True
+                st.rerun()
+    st.stop()
+
+# 4. INTERFAZ DE REGISTRO
 st.markdown("<h1 style='color: #00FF00;'>OKGRUAS RS 🚛</h1>", unsafe_allow_html=True)
 st.divider()
 
-col_form, col_resumen = st.columns([3, 2])
+col_datos, col_calculos = st.columns([3, 2])
 
-with col_form:
-    st.markdown("### 📍 REGISTRO DE SERVICIO")
+with col_datos:
+    st.markdown("### 📍 DATOS DEL SERVICIO")
     c1, c2 = st.columns(2)
-    with c1: nom_cliente = st.text_input("Nombre del Cliente:")
-    with c2: tel_cliente = st.text_input("WhatsApp (10 dígitos):")
+    with c1: cliente_nom = st.text_input("Nombre del Cliente:")
+    with c2: cliente_tel = st.text_input("WhatsApp (10 dígitos):")
     
     ck1, ck2 = st.columns(2)
-    with ck1: dist_km = st.number_input("Kilómetros Recorridos:", min_value=0.0, step=1.0)
-    with ck2: tipo_incidente = st.selectbox("Falla:", ["Mecánica", "Choque", "Llanta", "Batería", "Sótano"])
+    with ck1: km_totales = st.number_input("Kilómetros Recorridos:", min_value=0.0, step=1.0)
+    with ck2: tipo_falla = st.selectbox("Falla:", ["Falla Mecánica", "Choque", "Llanta", "Batería", "Sótano"])
     
     st.markdown("**🔧 Maniobras Extras ($350 c/u)**")
     m1, m2, m3 = st.columns(3)
-    llantas_t = m1.checkbox("Llantas trabadas")
-    no_neutral = m2.checkbox("No entra Neutral")
-    m_especial = m3.checkbox("Especial")
+    v_trabado = m1.checkbox("Volante/Llantas")
+    n_neutral = m2.checkbox("No Neutral")
+    especial = m3.checkbox("Extra Especial")
     
-    en_sotano = st.checkbox("🔦 ¿Es Sótano?")
-    num_pisos = st.number_input("Pisos:", min_value=0, step=1) if en_sotano else 0
+    sotano_en = st.checkbox("🔦 ¿Entrada a Sótano?")
+    niveles_n = st.number_input("¿Cuántos niveles?", min_value=0, step=1) if sotano_en else 0
 
-# CÁLCULOS (Aquí corregimos el error de TOTAL_TOTAL que te salía)
-EXTRAS_CALC = (350.0 * sum([llantas_t, no_neutral, m_especial])) + (num_pisos * 350.0)
-TOTAL_FINAL = 800.0 + (dist_km * 25.0) + EXTRAS_CALC
+# CÁLCULOS
+COSTO_MANIOBRAS = (350.0 * sum([v_trabado, n_neutral, especial])) + (niveles_n * 350.0)
+TOTAL_A_COBRAR = 800.0 + (km_totales * 25.0) + COSTO_MANIOBRAS
 
-with col_resumen:
-    st.markdown("### 📋 RESUMEN")
-    st.metric("TOTAL A COBRAR", f"${TOTAL_FINAL:,.2f}")
-    st.caption(f"Siguiente Folio: {gestionar_datos_excel()}")
+with col_calculos:
+    st.markdown("### 📋 DESGLOSE")
+    st.markdown(f"<div class='price-tag'>🏁 Salida: $800.00</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🛣️ Ruta ({km_totales}km): ${km_totales*25:,.2f}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='price-tag'>🔧 Extras: ${COSTO_MANIOBRAS:,.2f}</div>", unsafe_allow_html=True)
+    st.divider()
+    st.metric("TOTAL NETO", f"${TOTAL_A_COBRAR:,.2f}")
+    st.caption(f"Siguiente Folio a Generar: {inicializar_y_guardar()}")
 
-# 4. BOTÓN DE GUARDADO
+# 5. REGISTRO Y WHATSAPP
 st.divider()
-if len(tel_cliente) >= 10:
-    if st.button("🚀 GUARDAR Y ENVIAR WHATSAPP", use_container_width=True):
-        nuevo_servicio = {
-            "Folio": "", "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "Cliente": nom_cliente if nom_cliente else "Gral",
-            "WhatsApp": tel_cliente, "Falla": tipo_incidente, "KM": dist_km,
-            "Maniobras": EXTRAS_CALC, "Total": TOTAL_FINAL
+if len(cliente_tel) >= 10:
+    if st.button("🚀 REGISTRAR Y GENERAR WHATSAPP", use_container_width=True):
+        datos_registro = {
+            "Folio": "", 
+            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "Cliente": cliente_nom if cliente_nom else "General",
+            "WhatsApp": cliente_tel, 
+            "Falla": tipo_falla, 
+            "KM": km_totales,
+            "Maniobras": COSTO_MANIOBRAS, 
+            "Total": TOTAL_A_COBRAR
         }
-        folio_gen = gestionar_datos_excel(nuevo_servicio)
         
-        mensaje_wa = (f"*OKGRUAS RS*\n🆔 Folio: {folio_gen}\n💰 *TOTAL: ${TOTAL_FINAL:,.2f}*")
-        url_final = f"https://wa.me/52{tel_cliente[-10:]}?text={urllib.parse.quote(mensaje_wa)}"
+        folio_real = inicializar_y_guardar(datos_registro)
         
-        st.success(f"✅ ¡Folio {folio_gen} guardado!")
-        st.link_button("📲 ENVIAR POR WHATSAPP", url_final, type="primary", use_container_width=True)
+        # MENSAJE LIMPIO
+        mensaje = (f"*OKGRUAS RS*\n🆔 *Folio: {folio_real}*\n👤 Cliente: {datos_registro['Cliente']}\n🛠️ Falla: {tipo_falla}\n💰 *TOTAL: ${TOTAL_A_COBRAR:,.2f}*\n------------------\n_Servicio Monterrey_")
+        url_wa = f"https://wa.me/52{cliente_tel[-10:]}?text={urllib.parse.quote(mensaje)}"
+        
+        st.success(f"✅ ¡Servicio {folio_real} guardado en el Excel!")
+        st.link_button("📲 ENVIAR POR WHATSAPP", url_wa, type="primary", use_container_width=True)
 else:
-    st.info("💡 Ingresa el WhatsApp del cliente.")
+    st.info("💡 Ingresa el número del cliente para registrar.")
 
-# 5. ADMINISTRACIÓN (10% COMISIÓN)
-with st.expander("📊 PANEL PRIVADO"):
+# 6. PANEL DE AUDITORÍA (GANANCIA 10%)
+with st.expander("📊 PANEL ADMINISTRADOR"):
     if st.text_input("Clave Admin", type="password") == "RS2014":
-        if os.path.exists(ARCHIVO_REGISTRO):
-            df_adm = pd.read_excel(ARCHIVO_REGISTRO)
-            st.dataframe(df_adm)
-            ganancia = df_adm["Total"].sum() * 0.10
-            st.metric("TU GANANCIA (10%)", f"${ganancia:,.2f}")
+        if os.path.exists(ARCHIVO_EXCEL):
+            df_final = pd.read_csv(ARCHIVO_EXCEL, sep=';')
+            st.dataframe(df_final, use_container_width=True)
+            
+            # COMISIÓN AL 10%
+            mi_comision = df_final["Total"].sum() * 0.10
+            st.metric("TU GANANCIA (10%)", f"${mi_comision:,.2f}")
+            
+            st.download_button("📥 DESCARGAR EXCEL COMPLETO", 
+                             data=df_final.to_csv(index=False, sep=';').encode('utf-8'), 
+                             file_name="reporte_servicios_rs.csv", mime="text/csv")
