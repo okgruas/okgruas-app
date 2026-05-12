@@ -7,12 +7,12 @@ st.set_page_config(page_title="OKGRUAS RS - Cotización", page_icon="🚛", layo
 
 # 2. ESTILO VISUAL "NEÓN RS"
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
-    .stApp { background-color: #000000 !important; }
-    header, footer, .stAppDeployButton, #MainMenu { display: none !important; visibility: hidden !important; }
-    .block-container { padding-top: 2rem !important; }
-    html, body, [class*="css"], .stMarkdown { font-family: 'Montserrat', sans-serif; color: #FFFFFF !important; }
+    <hr>
+    <div style="text-align: center;">
+   <p style="color: #00FF00;">© 2026 <b>Okgruas RS</b> - Desarrollado por <b>Capitana Albatros</b></p>
+        <p style="font-size: 0.8em; color: gray;">Tu auxilio en el camino | Propiedad Intelectual Privada</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
         background-color: #1A1A1A !important; color: #00FF00 !important; border: 1px solid #00FF00 !important; 
