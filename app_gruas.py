@@ -173,7 +173,7 @@ st.markdown('<a href="tel:8120950997" class="call-footer">📞 LLAMADA DE EMERGE
 st.markdown("""
     <div style="text-align: center; margin-top: 30px;">
         <hr style="border-top: 1px solid #333 !important;">
-        <p style="color: #00FF00; font-size: 0.9rem;">© 2026 <b>Okgruas RS</b> - Desarrollado por <b>Capitana Albatros</b></p>
+        <p style="color: #00FF00; font-size: 0.9rem;">© 2026 <b>Okgruas RS</b> - Desarrollado por <b>Yajaira Leija (Capitana Albatros)</b></p>
         <p style="color: #444; font-size: 0.7rem;">Logística Integral Monterrey | Propiedad Intelectual Privada</p>
     </div>
     """, unsafe_allow_html=True)
