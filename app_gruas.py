@@ -1,6 +1,8 @@
 import streamlit as st
 import urllib.parse
 from streamlit_js_eval import streamlit_js_eval
+import segno
+import io
 
 # 1. CONFIGURACIÓN
 st.set_page_config(page_title="OKGRUAS RS - Cotización", page_icon="🚛", layout="centered")
@@ -150,24 +152,28 @@ if submit_rs:
         st.markdown(f'<a href="{link_ws}" target="_blank"><div style="background-color: #00FF00; color: black; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.2rem;">✅ ENVIAR POR WHATSAPP</div></a>', unsafe_allow_html=True)
     else:
         st.error("⚠️ El nombre es necesario para continuar.")
-import segno
-import io
 
 st.divider()
 st.markdown("<h3 style='text-align: center;'>📲 ¡Comparte OKGRUAS RS!</h3>", unsafe_allow_html=True)
 
-# Generamos el QR profesionalmente con código
-# Sustituye la URL por la tuya real
+# Generamos el QR profesionalmente
 url_app = "https://okgruas-rs.streamlit.app"
 qr = segno.make_qr(url_app)
-
-# Lo guardamos en un "archivo virtual" para mostrarlo en Streamlit
 buffer = io.BytesIO()
-qr.save(buffer, kind='png', scale=10, dark='#00FF00', light='#000000') # Colores neón
+qr.save(buffer, kind='png', scale=10, dark='#00FF00', light='#000000')
 
 col_q1, col_q2, col_q3 = st.columns([1, 1, 1])
 with col_q2:
-    st.image(buffer.getvalue(), caption="Escanea para compartir", use_column_width=True)# --- 6. BOTÓN DE LLAMADA AL FINAL (TUS PETICIÓN) ---
+    st.image(buffer.getvalue(), caption="Escanea para compartir", use_column_width=True)
+
+# --- 6. BOTÓN DE LLAMADA AL FINAL ---
 st.markdown('<a href="tel:8120950997" class="call-footer">📞 LLAMADA DE EMERGENCIA: 81 2095 0997</a>', unsafe_allow_html=True)
 
-st.markdown("<br><p style='text-align: center; color: #444; font-size: 10px;'>OKGRUAS RS © 2026 | Logística Integral Monterrey</p>", unsafe_allow_html=True)
+# --- PIE DE PÁGINA DE AUTORÍA (TU FIRMA) ---
+st.markdown("""
+    <div style="text-align: center; margin-top: 30px;">
+        <hr style="border-top: 1px solid #333 !important;">
+        <p style="color: #00FF00; font-size: 0.9rem;">© 2026 <b>Okgruas RS</b> - Desarrollado por <b>Capitana Albatros</b></p>
+        <p style="color: #444; font-size: 0.7rem;">Logística Integral Monterrey | Propiedad Intelectual Privada</p>
+    </div>
+    """, unsafe_allow_html=True)
